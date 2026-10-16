@@ -1,0 +1,13 @@
+<svg width="120" height="90" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Flag Pole -->
+  <line x1="38" y1="18" x2="38" y2="76" stroke="#2563EB" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Flag Shape (wavy blue flag) -->
+  <path d="M40 20C55 14 65 26 82 20C92 16 96 18 96 18V48C90 50 82 46 72 48C56 52 48 42 40 46V20Z" fill="#2563EB" />
+  
+  <!-- Subtle Pole Finial -->
+  <circle cx="38" cy="18" r="3" fill="#1D4ED8" />
+
+  <!-- Base ground line -->
+  <line x1="28" y1="76" x2="48" y2="76" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" />
+</svg>
