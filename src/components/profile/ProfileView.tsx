@@ -33,7 +33,7 @@ export default function ProfileView({ portal, user, onBack }: ProfileViewProps) 
     userName: user.username,
     loginName: user.username,
     emailId: '',
-    mobile: '0000000000',
+    mobile: '',
     address: '',
     phonePrefix: portal.portalKey.includes('Lawton') ? '+66-' : '+91-',
     role: portal.role,
@@ -120,7 +120,7 @@ export default function ProfileView({ portal, user, onBack }: ProfileViewProps) 
               ...data,
               userName: data.userName || prev.userName,
               emailId: data.emailId || prev.emailId,
-              mobile: data.mobile || prev.mobile,
+              mobile: data.mobile || '',
               address: data.address ?? prev.address,
               phonePrefix: data.phonePrefix || (portal.portalKey.includes('Lawton') ? '+66-' : '+91-'),
             }));
@@ -650,7 +650,7 @@ export default function ProfileView({ portal, user, onBack }: ProfileViewProps) 
                     Mobile Phone<span style={{ color: '#ef4444' }}>*</span>
                   </span>
                   <span style={{ fontSize: '14px', color: '#0f172a', fontFamily: 'monospace', fontWeight: 600 }}>
-                    {profile.phonePrefix || ''}{profile.mobile || '—'}
+                    {profile.mobile ? `${profile.phonePrefix || ''}${profile.mobile}` : '—'}
                   </span>
 
                   <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Email address</span>

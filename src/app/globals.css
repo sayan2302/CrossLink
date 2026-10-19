@@ -64,4 +64,215 @@ a {
   border-radius: 6px;
 }
 
+/* =========================================================================
+   PORTAL DASHBOARD CARDS & SVG MICRO-INTERACTIONS
+   ========================================================================= */
+
+.portal-dashboard-card {
+  transition: transform 300ms ease-out, box-shadow 300ms ease-out, border-color 300ms ease-out;
+  will-change: transform, box-shadow;
+}
+
+.portal-dashboard-card:hover {
+  transform: translateY(-4px) !important;
+}
+
+.portal-dashboard-card .legacy-card-img-box {
+  transition: background-color 300ms ease-out, border-color 300ms ease-out, transform 300ms ease-out;
+}
+
+/* Micro-interaction base transition */
+.portal-card-svg * {
+  transition: transform 300ms ease-out, opacity 300ms ease-out, stroke 300ms ease-out, fill 300ms ease-out;
+}
+
+/* 1. Analytics & Insights: Bars grow upward */
+.portal-dashboard-card .portal-anim-bar-1 {
+  transform-origin: 50.5px 68px;
+}
+.portal-dashboard-card .portal-anim-bar-2 {
+  transform-origin: 70.5px 68px;
+}
+.portal-dashboard-card .portal-anim-bar-3 {
+  transform-origin: 91.5px 68px;
+}
+.portal-dashboard-card .portal-anim-bar-4 {
+  transform-origin: 114.5px 68px;
+}
+.portal-dashboard-card:hover .portal-anim-bar-1 {
+  transform: scaleY(1.25);
+}
+.portal-dashboard-card:hover .portal-anim-bar-2 {
+  transform: scaleY(1.2);
+  transition-delay: 30ms;
+}
+.portal-dashboard-card:hover .portal-anim-bar-3 {
+  transform: scaleY(1.3);
+  transition-delay: 60ms;
+}
+.portal-dashboard-card:hover .portal-anim-bar-4 {
+  transform: scaleY(1.22);
+  transition-delay: 90ms;
+}
+.portal-dashboard-card:hover .portal-anim-trend-node {
+  transform: scale(1.3);
+  transform-origin: 93px 20px;
+}
+
+/* 2. E-Cards: Card slight tilt & download arrow sliding down */
+.portal-dashboard-card .portal-anim-card-body {
+  transform-origin: 88px 43px;
+}
+.portal-dashboard-card:hover .portal-anim-card-body {
+  transform: rotate(-2deg) translateY(-1px);
+}
+.portal-dashboard-card:hover .portal-anim-download-arrow {
+  transform: translateY(3px);
+}
+.portal-dashboard-card:hover .portal-anim-nfc-1 {
+  transform: scale(1.15);
+  transform-origin: 116px 40px;
+}
+.portal-dashboard-card:hover .portal-anim-nfc-2 {
+  transform: scale(1.2);
+  transform-origin: 120px 40px;
+  transition-delay: 60ms;
+}
+
+/* 3. Search Medical Provider: Pin bobs up, cross pulses & radar beacon expands */
+.portal-dashboard-card .portal-anim-pin {
+  transform-origin: 84px 64px;
+}
+.portal-dashboard-card:hover .portal-anim-pin {
+  transform: translateY(-4px);
+}
+.portal-dashboard-card .portal-anim-cross {
+  transform-origin: 84px 32px;
+}
+.portal-dashboard-card:hover .portal-anim-cross {
+  transform: scale(1.15);
+}
+.portal-dashboard-card .portal-anim-radar-wave {
+  transform-origin: 84px 65px;
+}
+.portal-dashboard-card:hover .portal-anim-radar-wave {
+  transform: scale(1.25);
+  opacity: 0.85;
+}
+
+/* 4. Profile: Shield pulses and avatar subtly floats */
+.portal-dashboard-card .portal-anim-shield {
+  transform-origin: 97px 54px;
+}
+.portal-dashboard-card:hover .portal-anim-shield {
+  transform: scale(1.2);
+}
+.portal-dashboard-card:hover .portal-anim-avatar {
+  transform: translateY(-2px);
+}
+
+/* 5. Policy Details: Document text lines slide right & protective crest scales */
+.portal-dashboard-card:hover .portal-anim-line-1 {
+  transform: translateX(4px);
+}
+.portal-dashboard-card:hover .portal-anim-line-2 {
+  transform: translateX(5px);
+  transition-delay: 40ms;
+}
+.portal-dashboard-card:hover .portal-anim-line-3 {
+  transform: translateX(3px);
+  transition-delay: 80ms;
+}
+.portal-dashboard-card .portal-anim-guarantee-shield {
+  transform-origin: 96px 56px;
+}
+.portal-dashboard-card:hover .portal-anim-guarantee-shield {
+  transform: scale(1.18);
+}
+
+/* 6. Member Data Upload: Arrow slides upward & data packets pulse */
+.portal-dashboard-card:hover .portal-anim-upload-arrow {
+  transform: translateY(-4px);
+}
+.portal-dashboard-card .portal-anim-packet-1 {
+  transform-origin: 72px 40px;
+}
+.portal-dashboard-card:hover .portal-anim-packet-1 {
+  transform: scale(1.4);
+}
+.portal-dashboard-card .portal-anim-packet-2 {
+  transform-origin: 80px 36px;
+}
+.portal-dashboard-card:hover .portal-anim-packet-2 {
+  transform: scale(1.4);
+  transition-delay: 50ms;
+}
+
+/* 7. Track Claims: Magnifying glass rotates/tracks & active milestone illuminates */
+.portal-dashboard-card .portal-anim-glass {
+  transform-origin: 112px 48px;
+}
+.portal-dashboard-card:hover .portal-anim-glass {
+  transform: rotate(14deg) translate(-2px, -2px);
+}
+.portal-dashboard-card .portal-anim-active-node {
+  transform-origin: 62px 55px;
+}
+.portal-dashboard-card:hover .portal-anim-active-node {
+  transform: scale(1.35);
+  fill: currentColor;
+}
+
+/* 8. Member Dashboard: Team members slide outward & lead avatar gently scales */
+.portal-dashboard-card:hover .portal-anim-member-left {
+  transform: translateX(-4px);
+}
+.portal-dashboard-card:hover .portal-anim-member-right {
+  transform: translateX(4px);
+}
+.portal-dashboard-card .portal-anim-member-center {
+  transform-origin: 84px 44px;
+}
+.portal-dashboard-card:hover .portal-anim-member-center {
+  transform: scale(1.08);
+}
+
+/* 9. Claim Submission: Launch airplane flies forward-upward with trail extending */
+.portal-dashboard-card:hover .portal-anim-airplane {
+  transform: translate(5px, -5px);
+}
+.portal-dashboard-card .portal-anim-trail {
+  transform-origin: left center;
+}
+.portal-dashboard-card:hover .portal-anim-trail {
+  transform: scaleX(1.35);
+}
+
+/* 10. Client Details: Corporate tower windows illuminate & beacon pulses */
+.portal-dashboard-card .portal-anim-beacon {
+  transform-origin: 84px 6px;
+}
+.portal-dashboard-card:hover .portal-anim-beacon {
+  transform: scale(1.4);
+}
+.portal-dashboard-card:hover .portal-anim-windows rect {
+  opacity: 0.9;
+  fill: currentColor;
+}
+
+/* 11. Policy List & Endorsements: Front policy sheet furls out & seal scales */
+.portal-dashboard-card .portal-anim-policy-front {
+  transform-origin: 52px 68px;
+}
+.portal-dashboard-card:hover .portal-anim-policy-front {
+  transform: rotate(-2deg) translate(-2px, 1px);
+}
+.portal-dashboard-card .portal-anim-rosette {
+  transform-origin: 106px 52px;
+}
+.portal-dashboard-card:hover .portal-anim-rosette {
+  transform: scale(1.2);
+}
+
+
 
