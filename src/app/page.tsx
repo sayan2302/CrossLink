@@ -1,6 +1,6 @@
 import { headers, cookies } from 'next/headers';
 import { PORTAL_CONFIGS, DEFAULT_PORTAL_KEY } from '@/config/tenants';
-import LoginForm from '@/components/LoginForm';
+import { LOGIN_REGISTRY } from '@/tenants/registry';
 import DevPortalSwitcher from '@/components/DevPortalSwitcher';
 
 export const dynamic = 'force-dynamic';
@@ -17,9 +17,11 @@ export default async function LoginPage() {
   const portal = PORTAL_CONFIGS[portalKey] || PORTAL_CONFIGS[DEFAULT_PORTAL_KEY];
   const isDev = process.env.NODE_ENV === 'development';
 
+  const DedicatedLoginView = LOGIN_REGISTRY[portal.portalKey] || LOGIN_REGISTRY[DEFAULT_PORTAL_KEY];
+
   return (
     <main>
-      <LoginForm portal={portal} />
+      <DedicatedLoginView portal={portal} />
       {isDev && <DevPortalSwitcher currentPortalKey={portal.portalKey} />}
     </main>
   );

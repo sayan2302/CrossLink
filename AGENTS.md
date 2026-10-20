@@ -112,23 +112,30 @@ CrossLink MUST NEVER directly call external microservices, IPMI backend services
 
 ### Rules of Independence:
 1. **Directory Structure**:
-   All portal-facing module components MUST reside in their dedicated directory matching their tenant and role hierarchy:
+   All portal-facing module components, landing dashboards, and login views MUST reside in their dedicated directory matching their tenant and role hierarchy:
    ```
    src/tenants/<Tenant>/<Role>/<Module>/index.tsx
+   src/tenants/<Tenant>/<Role>/Dashboard/index.tsx
+   src/tenants/<Tenant>/<Role>/Login/index.tsx
    ```
    Examples:
+   - `src/tenants/Mayfair/Corporate/Dashboard/index.tsx`
+   - `src/tenants/Mayfair/Corporate/Login/index.tsx`
+   - `src/tenants/Lawton/Partner/Dashboard/index.tsx`
+   - `src/tenants/Lawton/Partner/Login/index.tsx`
    - `src/tenants/Mayfair/Corporate/DownloadEcards/index.tsx`
    - `src/tenants/Lawton/Corporate/DownloadEcards/index.tsx`
    - `src/tenants/Lawton/Partner/ViewClaims/index.tsx`
-   - `src/tenants/Mayfair/Partner/ViewClaims/index.tsx`
 
 2. **Zero Conditional Branching for Tenants or Roles in Views**:
    - **STRICTLY FORBIDDEN**: Using conditionals such as `isLawton`, `isMayfair`, `portal.portalKey.includes(...)`, `portal.role === '...'`, `user.role === '...'`, or `componentId === '...'` inside view templates, render trees, or business logic to toggle UI elements or API paths.
    - If Mayfair Corporate needs an Employee Code search and Lawton Corporate needs Entity/Policy dropdowns, they MUST be two separate, independent view files—NEVER a single file with `if (isLawton)` forks.
 
-3. **1-to-1 Component Registry (`src/tenants/registry.ts`)**:
-   - The Component Registry is the single source of truth connecting MongoDB `componentId` strings directly to their dedicated module views.
-   - Dynamic dashboard resolution in `DashboardHost.tsx` MUST use `COMPONENT_REGISTRY[componentId]` directly. No nested ternary ladders or switch statements are allowed in the host page.
+3. **1-to-1 Component Registries (`src/tenants/registry.ts`)**:
+   - `COMPONENT_REGISTRY`: The single source of truth connecting MongoDB `componentId` strings directly to their dedicated module views.
+   - `DASHBOARD_REGISTRY`: Connects each `portalKey` directly to its dedicated, fully isolated landing Dashboard view.
+   - `LOGIN_REGISTRY`: Connects each `portalKey` directly to its dedicated, fully isolated Login view.
+   - Dynamic view resolution in `DashboardHost.tsx` and `src/app/page.tsx` MUST use these registries directly. No monolithic shells or negative check ladders are allowed.
 
 4. **Strict Scope of `src/tenants/Common/`**:
    - `src/tenants/Common/` must ONLY contain tenant-agnostic, pure UI primitives (e.g., `types.ts`, `UnmigratedSpecModal.tsx`).

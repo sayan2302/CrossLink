@@ -1,5 +1,19 @@
 import React from 'react';
-import { PortalViewProps } from './Common/types';
+import { PortalViewProps, DashboardViewProps, LoginViewProps } from './Common/types';
+
+// Dedicated Portal Dashboards
+import MayfairCorporateDashboard from './Mayfair/Corporate/Dashboard';
+import MayfairPartnerDashboard from './Mayfair/Partner/Dashboard';
+import MayfairInsurerDashboard from './Mayfair/Insurer/Dashboard';
+import LawtonCorporateDashboard from './Lawton/Corporate/Dashboard';
+import LawtonPartnerDashboard from './Lawton/Partner/Dashboard';
+
+// Dedicated Portal Logins
+import MayfairCorporateLogin from './Mayfair/Corporate/Login';
+import MayfairPartnerLogin from './Mayfair/Partner/Login';
+import MayfairInsurerLogin from './Mayfair/Insurer/Login';
+import LawtonCorporateLogin from './Lawton/Corporate/Login';
+import LawtonPartnerLogin from './Lawton/Partner/Login';
 
 // Mayfair Partner
 import MayfairPartnerInsights from './Mayfair/Partner/Insights';
@@ -105,3 +119,29 @@ export const COMPONENT_REGISTRY: Record<string, React.ComponentType<PortalViewPr
 export function getComponentView(componentId: string): React.ComponentType<PortalViewProps> | null {
   return COMPONENT_REGISTRY[componentId] || null;
 }
+
+/**
+ * DASHBOARD_REGISTRY
+ * 
+ * Maps each portal key directly to its dedicated, fully isolated landing Dashboard view.
+ */
+export const DASHBOARD_REGISTRY: Record<string, React.ComponentType<DashboardViewProps>> = {
+  MayfairCorporate: MayfairCorporateDashboard,
+  MayfairPartner: MayfairPartnerDashboard,
+  MayfairInsurer: MayfairInsurerDashboard,
+  LawtonCorporate: LawtonCorporateDashboard,
+  LawtonPartner: LawtonPartnerDashboard,
+};
+
+/**
+ * LOGIN_REGISTRY
+ * 
+ * Maps each portal key directly to its dedicated, fully isolated Login view.
+ */
+export const LOGIN_REGISTRY: Record<string, React.ComponentType<LoginViewProps>> = {
+  MayfairCorporate: MayfairCorporateLogin,
+  MayfairPartner: MayfairPartnerLogin,
+  MayfairInsurer: MayfairInsurerLogin,
+  LawtonCorporate: LawtonCorporateLogin,
+  LawtonPartner: LawtonPartnerLogin,
+};
