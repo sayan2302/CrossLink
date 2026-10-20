@@ -7,12 +7,8 @@ import { PortalConfig } from '@/config/tenants';
 import { ComponentMeta } from '@/config/components';
 import { getComponentAsset } from '@/config/component-assets';
 import DevPortalSwitcher from './DevPortalSwitcher';
-import ProfileView from './profile/ProfileView';
-import ClientDetailsView from './broker/ClientDetailsView';
-import DownloadEcardsView from './ecard/DownloadEcardsView';
-import ViewClaimsView from './claims/ViewClaimsView';
-import SearchMedicalProviderView from './provider/SearchMedicalProviderView';
-import PolicyListView from './policy/PolicyListView';
+import { COMPONENT_REGISTRY } from '@/tenants/registry';
+import { UnmigratedSpecModal } from '@/tenants/Common';
 
 interface DashboardHostProps {
   portal: PortalConfig;
@@ -28,25 +24,6 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
   const searchParams = useSearchParams();
   const viewParam = searchParams.get('view');
 
-  const isPolicyComponent = (comp: ComponentMeta | null) => {
-    if (!comp) return false;
-    const id = comp.id;
-    const name = comp.name.toLowerCase();
-    if (id === 'LawtonCorporateMemberDetails' || name === 'member details') return false;
-    return (
-      id === 'LawtonPartnerPolicyList' ||
-      id === 'MayfairCorporatePolicyDetails' ||
-      id === 'MayfairPartnerPolicyCoverage' ||
-      id === 'MayfairInsurerPolicyCoverage' ||
-      id.includes('PolicyList') ||
-      id.includes('PolicyDetails') ||
-      id.includes('PolicyCoverage') ||
-      name === 'policy list' ||
-      name === 'policy details' ||
-      name === 'policy coverage'
-    );
-  };
-
   const [selectedComponent, setSelectedComponent] = useState<ComponentMeta | null>(() => {
     if (!viewParam) return null;
     const match = components.find(
@@ -58,7 +35,7 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
     if (match) return match;
     if (viewParam.toLowerCase() === 'profile') {
       return {
-        id: `${portal.brandName.replace(/\s+/g, '')}Profile`,
+        id: `${portal.portalKey}Profile`,
         name: 'Profile',
         order: 99,
         description: 'View and update your personal information and contact details',
@@ -81,7 +58,7 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
         setSelectedComponent(match);
       } else if (viewParam.toLowerCase() === 'profile') {
         setSelectedComponent({
-          id: `${portal.brandName.replace(/\s+/g, '')}Profile`,
+          id: `${portal.portalKey}Profile`,
           name: 'Profile',
           order: 99,
           description: 'View and update your personal information and contact details',
@@ -90,7 +67,7 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
     } else {
       setSelectedComponent(null);
     }
-  }, [viewParam, components, portal.brandName]);
+  }, [viewParam, components, portal.portalKey]);
 
   const handleSelectComponent = (comp: ComponentMeta) => {
     setSelectedComponent(comp);
@@ -114,37 +91,56 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
     }
   };
 
+  // Resolve component using strict 1-to-1 Component Registry lookup
+  const resolveActiveView = (comp: ComponentMeta) => {
+    if (COMPONENT_REGISTRY[comp.id]) {
+      return COMPONENT_REGISTRY[comp.id];
+    }
+    if (comp.name.toLowerCase() === 'profile' && COMPONENT_REGISTRY[`${portal.portalKey}Profile`]) {
+      return COMPONENT_REGISTRY[`${portal.portalKey}Profile`];
+    }
+    return null;
+  };
+
+  const ActiveComponentView = selectedComponent ? resolveActiveView(selectedComponent) : null;
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f8fafc',
-      color: '#0f172a',
-      fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
-    }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#f8fafc',
+        color: '#0f172a',
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      }}
+    >
       {/* TOP NAVIGATION BAR */}
-      <header style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '14px 32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)'
-      }}>
+      <header
+        style={{
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e2e8f0',
+          padding: '14px 32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
+        }}
+      >
         {/* Left: Brand Identity */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '4px 16px',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            border: '1px solid #f1f5f9',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-          }}>
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              padding: '4px 16px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              border: '1px solid #f1f5f9',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+          >
             <Image
               src={portal.logoUrl}
               alt={portal.logoAlt}
@@ -156,31 +152,47 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
           </div>
         </div>
 
-
         {/* Right: User Profile & Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '6px 14px',
-            borderRadius: '9999px',
-            backgroundColor: '#f1f5f9',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              backgroundColor: portal.accentColor,
+          <div
+            onClick={() => {
+              setSelectedComponent({
+                id: `${portal.portalKey}Profile`,
+                name: 'Profile',
+                order: 99,
+                description: 'View and update your personal information and contact details',
+              });
+              window.history.pushState(null, '', '/dashboard?view=profile');
+            }}
+            role="button"
+            tabIndex={0}
+            style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: '12px',
-              color: '#ffffff'
-            }}>
-              {user.username.charAt(0).toUpperCase()}
+              gap: '10px',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              backgroundColor: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s ease',
+            }}
+          >
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                backgroundColor: portal.accentColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '12px',
+                color: '#ffffff',
+              }}
+            >
+              {user.username.slice(0, 2).toUpperCase()}
             </div>
             <div style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
               {user.username}
@@ -199,7 +211,7 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
               fontSize: '13px',
               fontWeight: 600,
               cursor: loggingOut ? 'wait' : 'pointer',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.15s ease',
             }}
           >
             {loggingOut ? 'Signing out...' : 'Sign Out'}
@@ -209,314 +221,168 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
 
       {/* MAIN CONTAINER */}
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '36px 32px 80px' }}>
-        {selectedComponent && selectedComponent.name.toLowerCase() === 'profile' ? (
-          <ProfileView portal={portal} user={user} onBack={handleBackToDashboard} />
-        ) : selectedComponent &&
-          (selectedComponent.id === 'LawtonPartnerClientDetails' ||
-            selectedComponent.id === 'LawtonCorporateMemberDetails' ||
-            selectedComponent.name.toLowerCase() === 'client details' ||
-            selectedComponent.name.toLowerCase() === 'member details') ? (
-          <ClientDetailsView
-            portal={portal}
-            user={user}
-            componentId={selectedComponent.id}
-            componentName={selectedComponent.name}
-            onBack={handleBackToDashboard}
-          />
-        ) : selectedComponent &&
-          (selectedComponent.id.includes('DownloadEcards') ||
-            selectedComponent.name.toLowerCase() === 'download e-cards' ||
-            selectedComponent.name.toLowerCase() === 'download ecards') ? (
-          <DownloadEcardsView
-            portal={portal}
-            user={user}
-            componentId={selectedComponent.id}
-            onBack={handleBackToDashboard}
-          />
-        ) : selectedComponent &&
-          (selectedComponent.id.includes('Claims') ||
-            selectedComponent.name.toLowerCase() === 'view claims' ||
-            selectedComponent.name.toLowerCase() === 'track claims') ? (
-          <ViewClaimsView
-            portal={portal}
-            user={user}
-            componentId={selectedComponent.id}
-            onBack={handleBackToDashboard}
-          />
-        ) : selectedComponent &&
-          (selectedComponent.id.includes('SearchMedicalProvider') ||
-            selectedComponent.name.toLowerCase() === 'search medical provider' ||
-            selectedComponent.name.toLowerCase() === 'search medical providers') ? (
-          <SearchMedicalProviderView
-            portal={portal}
-            user={user}
-            componentId={selectedComponent.id}
-            onBack={handleBackToDashboard}
-          />
-        ) : selectedComponent && isPolicyComponent(selectedComponent) ? (
-          <PolicyListView
-            portal={portal}
-            user={user}
-            componentId={selectedComponent.id}
-            onBack={handleBackToDashboard}
-          />
+        {selectedComponent ? (
+          ActiveComponentView ? (
+            <ActiveComponentView
+              portal={portal}
+              user={user}
+              componentId={selectedComponent.id}
+              componentName={selectedComponent.name}
+              onBack={handleBackToDashboard}
+            />
+          ) : (
+            <UnmigratedSpecModal
+              component={selectedComponent}
+              portal={portal}
+              onClose={handleBackToDashboard}
+            />
+          )
         ) : (
           <>
             {/* HERO / WELCOME BANNER */}
-            <div style={{
-              borderRadius: '20px',
-              background: `linear-gradient(135deg, ${portal.primaryColor}10 0%, #ffffff 100%)`,
-              border: '1px solid #e2e8f0',
-              padding: '36px 40px',
-              marginBottom: '36px',
-              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '24px'
-            }}>
-          <div>
-            <h1 style={{ fontSize: '26px', fontWeight: 500, color: '#0f172a', letterSpacing: '-0.02em', marginBottom: '8px' }}>
-              Hello, <span style={{ fontWeight: 800 }}>&quot;{user.username}&quot;</span>
-            </h1>
-            <p style={{ fontSize: '15px', color: '#475569', maxWidth: '640px', lineHeight: 1.5 }}>
-              Welcome to <span style={{ fontWeight: 600, color: portal.accentColor }}>{portal.brandName}</span>. We&apos;re here for you and your team&apos;s health and wellness.
-            </p>
-          </div>
-
-        </div>
-
-        {/* DYNAMIC COMPONENT CARDS GRID */}
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: '20px'
-        }}>
-          {[...components].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((comp) => {
-            const asset = getComponentAsset(comp.id, comp.name);
-            return (
-              <div
-                key={comp.id}
-                className="portal-dashboard-card"
-                onClick={() => handleSelectComponent(comp)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleSelectComponent(comp);
-                  }
-                }}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '16px',
-                  padding: '20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = portal.accentColor;
-                  e.currentTarget.style.boxShadow = `0 10px 25px -4px ${portal.accentColor}25`;
-                  e.currentTarget.style.transform = 'translateY(-3px)';
-                  const imgBox = e.currentTarget.querySelector('.legacy-card-img-box') as HTMLElement;
-                  if (imgBox) imgBox.style.backgroundColor = '#eff6ff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#e2e8f0';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(15, 23, 42, 0.04)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  const imgBox = e.currentTarget.querySelector('.legacy-card-img-box') as HTMLElement;
-                  if (imgBox) imgBox.style.backgroundColor = '#f1f5f9';
-                }}
-              >
-                {/* Legacy Illustration Preview Box */}
-                <div
-                  className="legacy-card-img-box"
+            <div
+              style={{
+                borderRadius: '20px',
+                background: `linear-gradient(135deg, ${portal.primaryColor}10 0%, #ffffff 100%)`,
+                border: '1px solid #e2e8f0',
+                padding: '36px 40px',
+                marginBottom: '36px',
+                boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '24px',
+              }}
+            >
+              <div>
+                <h1
                   style={{
-                    backgroundColor: '#f1f5f9',
-                    borderRadius: '12px',
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '116px',
-                    marginBottom: '16px',
-                    border: '1px solid #e2e8f0',
-                    transition: 'background-color 0.2s ease'
+                    fontSize: '26px',
+                    fontWeight: 500,
+                    color: '#0f172a',
+                    letterSpacing: '-0.02em',
+                    marginBottom: '8px',
                   }}
                 >
-                  <img
-                    src={asset.src}
-                    alt={asset.alt}
-                    style={{
-                      maxHeight: '85px',
-                      maxWidth: '100%',
-                      objectFit: 'contain'
-                    }}
-                  />
-                </div>
-
-                {/* Name */}
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  marginBottom: '8px',
-                  lineHeight: 1.3
-                }}>
-                  {comp.name}
-                </h3>
-
-                {/* Description */}
-                <p style={{
-                  fontSize: '13px',
-                  color: '#64748b',
-                  lineHeight: 1.5,
-                  margin: 0
-                }}>
-                  {comp.description}
+                  Hello, <span style={{ fontWeight: 800 }}>&quot;{user.username}&quot;</span>
+                </h1>
+                <p style={{ fontSize: '15px', color: '#475569', maxWidth: '640px', lineHeight: 1.5 }}>
+                  Welcome to <span style={{ fontWeight: 600, color: portal.accentColor }}>{portal.brandName}</span>. We&apos;re here for you and your team&apos;s health and wellness.
                 </p>
               </div>
-            );
-          })}
-        </div>
-      </>
-    )}
-
-    {/* MODAL / INSPECT COMPONENT SPEC (For unmigrated modules) */}
-    {selectedComponent &&
-      selectedComponent.name.toLowerCase() !== 'profile' &&
-      selectedComponent.id !== 'LawtonPartnerClientDetails' &&
-      selectedComponent.id !== 'LawtonCorporateMemberDetails' &&
-      selectedComponent.name.toLowerCase() !== 'client details' &&
-      selectedComponent.name.toLowerCase() !== 'member details' &&
-      !selectedComponent.id.includes('DownloadEcards') &&
-      selectedComponent.name.toLowerCase() !== 'download e-cards' &&
-      selectedComponent.name.toLowerCase() !== 'download ecards' &&
-      !selectedComponent.id.includes('Claims') &&
-      selectedComponent.name.toLowerCase() !== 'view claims' &&
-      selectedComponent.name.toLowerCase() !== 'track claims' &&
-      !selectedComponent.id.includes('SearchMedicalProvider') &&
-      selectedComponent.name.toLowerCase() !== 'search medical provider' &&
-      selectedComponent.name.toLowerCase() !== 'search medical providers' &&
-      !isPolicyComponent(selectedComponent) && (() => {
-          const selectedAsset = getComponentAsset(selectedComponent.id, selectedComponent.name);
-          return (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(15, 23, 42, 0.6)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: '20px'
-            }}>
-              <div style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                padding: '32px',
-                maxWidth: '560px',
-                width: '100%',
-                boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '11px', textTransform: 'uppercase', color: portal.accentColor, fontWeight: 700 }}>
-                    Architecture Specification
-                  </span>
-                  <button
-                    onClick={() => setSelectedComponent(null)}
-                    style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-                  <div style={{
-                    width: '68px',
-                    height: '68px',
-                    backgroundColor: '#f1f5f9',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '8px',
-                    border: '1px solid #e2e8f0',
-                    flexShrink: 0
-                  }}>
-                    <img
-                      src={selectedAsset.src}
-                      alt={selectedAsset.alt}
-                      style={{ maxHeight: '52px', maxWidth: '100%', objectFit: 'contain' }}
-                    />
-                  </div>
-                  <div>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', marginBottom: '2px' }}>
-                      {selectedComponent.name}
-                    </h2>
-                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
-                      Module #{selectedComponent.order}
-                    </span>
-                  </div>
-                </div>
-
-                <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginBottom: '20px' }}>
-                  {selectedComponent.description}
-                </p>
-
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-                <div style={{ padding: '10px 14px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Target Component ID</span>
-                  <code style={{ fontSize: '13px', color: portal.accentColor, fontWeight: 700 }}>{selectedComponent.id}</code>
-                </div>
-                <div style={{ padding: '10px 14px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Active Portal Key</span>
-                  <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: 600 }}>{portal.portalKey} ({portal.role})</span>
-                </div>
-                <div style={{ padding: '10px 14px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Migration Strategy</span>
-                  <span style={{ fontSize: '13px', color: '#059669', fontWeight: 600 }}>
-                    Composable Hybrid Pattern (Shared UI Primitive + Dedicated View)
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setSelectedComponent(null)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  backgroundColor: portal.accentColor,
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Close Spec
-              </button>
             </div>
-          </div>
-        );
-      })()}
 
+            {/* DYNAMIC COMPONENT CARDS GRID */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: '20px',
+              }}
+            >
+              {[...components]
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                .map((comp) => {
+                  const asset = getComponentAsset(comp.id, comp.name);
+                  return (
+                    <div
+                      key={comp.id}
+                      className="portal-dashboard-card"
+                      onClick={() => handleSelectComponent(comp)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelectComponent(comp);
+                        }
+                      }}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = portal.accentColor;
+                        e.currentTarget.style.boxShadow = `0 10px 25px -4px ${portal.accentColor}25`;
+                        e.currentTarget.style.transform = 'translateY(-3px)';
+                        const imgBox = e.currentTarget.querySelector('.legacy-card-img-box') as HTMLElement;
+                        if (imgBox) imgBox.style.backgroundColor = '#eff6ff';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#e2e8f0';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(15, 23, 42, 0.04)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        const imgBox = e.currentTarget.querySelector('.legacy-card-img-box') as HTMLElement;
+                        if (imgBox) imgBox.style.backgroundColor = '#f1f5f9';
+                      }}
+                    >
+                      {/* Legacy Illustration Preview Box */}
+                      <div
+                        className="legacy-card-img-box"
+                        style={{
+                          backgroundColor: '#f1f5f9',
+                          borderRadius: '12px',
+                          padding: '16px 20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '116px',
+                          marginBottom: '16px',
+                          border: '1px solid #e2e8f0',
+                          transition: 'background-color 0.2s ease',
+                        }}
+                      >
+                        <img
+                          src={asset.src}
+                          alt={asset.alt}
+                          style={{
+                            maxHeight: '85px',
+                            maxWidth: '100%',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      </div>
+
+                      {/* Name */}
+                      <h3
+                        style={{
+                          fontSize: '18px',
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          marginBottom: '8px',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {comp.name}
+                      </h3>
+
+                      {/* Description */}
+                      <p
+                        style={{
+                          fontSize: '13px',
+                          color: '#64748b',
+                          lineHeight: 1.5,
+                          margin: 0,
+                        }}
+                      >
+                        {comp.description}
+                      </p>
+                    </div>
+                  );
+                })}
+            </div>
+          </>
+        )}
       </main>
 
       {/* Dev Switcher */}
