@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { PortalConfig } from '@/config/tenants';
 import { ComponentMeta } from '@/config/components';
 import { getComponentAsset } from '@/config/component-assets';
-import PortalCardIcon from './dashboard/PortalCardIcon';
 import DevPortalSwitcher from './DevPortalSwitcher';
 import ProfileView from './profile/ProfileView';
 import ClientDetailsView from './broker/ClientDetailsView';
@@ -33,9 +32,9 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
     if (!comp) return false;
     const id = comp.id;
     const name = comp.name.toLowerCase();
+    if (id === 'LawtonCorporateMemberDetails' || name === 'member details') return false;
     return (
       id === 'LawtonPartnerPolicyList' ||
-      id === 'LawtonCorporateMemberDetails' ||
       id === 'MayfairCorporatePolicyDetails' ||
       id === 'MayfairPartnerPolicyCoverage' ||
       id === 'MayfairInsurerPolicyCoverage' ||
@@ -44,8 +43,7 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
       id.includes('PolicyCoverage') ||
       name === 'policy list' ||
       name === 'policy details' ||
-      name === 'policy coverage' ||
-      name === 'member details'
+      name === 'policy coverage'
     );
   };
 
@@ -215,8 +213,16 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
           <ProfileView portal={portal} user={user} onBack={handleBackToDashboard} />
         ) : selectedComponent &&
           (selectedComponent.id === 'LawtonPartnerClientDetails' ||
-            selectedComponent.name.toLowerCase() === 'client details') ? (
-          <ClientDetailsView portal={portal} user={user} onBack={handleBackToDashboard} />
+            selectedComponent.id === 'LawtonCorporateMemberDetails' ||
+            selectedComponent.name.toLowerCase() === 'client details' ||
+            selectedComponent.name.toLowerCase() === 'member details') ? (
+          <ClientDetailsView
+            portal={portal}
+            user={user}
+            componentId={selectedComponent.id}
+            componentName={selectedComponent.name}
+            onBack={handleBackToDashboard}
+          />
         ) : selectedComponent &&
           (selectedComponent.id.includes('DownloadEcards') ||
             selectedComponent.name.toLowerCase() === 'download e-cards' ||
@@ -289,6 +295,7 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
           gap: '20px'
         }}>
           {[...components].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((comp) => {
+            const asset = getComponentAsset(comp.id, comp.name);
             return (
               <div
                 key={comp.id}
@@ -305,60 +312,55 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
                 style={{
                   backgroundColor: '#ffffff',
                   border: '1px solid #e2e8f0',
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
                   cursor: 'pointer',
-                  transition: 'transform 300ms ease-out, box-shadow 300ms ease-out, border-color 300ms ease-out',
+                  transition: 'all 0.2s ease',
                   boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
                   position: 'relative',
                   overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = portal.accentColor;
-                  e.currentTarget.style.boxShadow = `0 16px 32px -6px ${portal.accentColor}28, 0 4px 12px -2px rgba(15, 23, 42, 0.04)`;
-                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = `0 10px 25px -4px ${portal.accentColor}25`;
+                  e.currentTarget.style.transform = 'translateY(-3px)';
                   const imgBox = e.currentTarget.querySelector('.legacy-card-img-box') as HTMLElement;
-                  if (imgBox) {
-                    imgBox.style.backgroundColor = `${portal.accentColor}0a`;
-                    imgBox.style.borderColor = `${portal.accentColor}35`;
-                  }
+                  if (imgBox) imgBox.style.backgroundColor = '#eff6ff';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = '#e2e8f0';
                   e.currentTarget.style.boxShadow = '0 2px 8px rgba(15, 23, 42, 0.04)';
                   e.currentTarget.style.transform = 'translateY(0)';
                   const imgBox = e.currentTarget.querySelector('.legacy-card-img-box') as HTMLElement;
-                  if (imgBox) {
-                    imgBox.style.backgroundColor = '#f8fafc';
-                    imgBox.style.borderColor = '#e2e8f0';
-                  }
+                  if (imgBox) imgBox.style.backgroundColor = '#f1f5f9';
                 }}
               >
-                {/* Modern Scalable Inline SVG Card Presentation Box */}
+                {/* Legacy Illustration Preview Box */}
                 <div
                   className="legacy-card-img-box"
                   style={{
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '16px',
-                    padding: '8px 12px',
+                    backgroundColor: '#f1f5f9',
+                    borderRadius: '12px',
+                    padding: '16px 20px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     height: '116px',
                     marginBottom: '16px',
                     border: '1px solid #e2e8f0',
-                    transition: 'all 300ms ease-out',
-                    overflow: 'hidden'
+                    transition: 'background-color 0.2s ease'
                   }}
                 >
-                  <PortalCardIcon
-                    componentId={comp.id}
-                    componentName={comp.name}
-                    accentColor={portal.accentColor}
-                    width="100%"
-                    height={88}
+                  <img
+                    src={asset.src}
+                    alt={asset.alt}
+                    style={{
+                      maxHeight: '85px',
+                      maxWidth: '100%',
+                      objectFit: 'contain'
+                    }}
                   />
                 </div>
 
@@ -393,7 +395,9 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
     {selectedComponent &&
       selectedComponent.name.toLowerCase() !== 'profile' &&
       selectedComponent.id !== 'LawtonPartnerClientDetails' &&
+      selectedComponent.id !== 'LawtonCorporateMemberDetails' &&
       selectedComponent.name.toLowerCase() !== 'client details' &&
+      selectedComponent.name.toLowerCase() !== 'member details' &&
       !selectedComponent.id.includes('DownloadEcards') &&
       selectedComponent.name.toLowerCase() !== 'download e-cards' &&
       selectedComponent.name.toLowerCase() !== 'download ecards' &&
@@ -445,21 +449,19 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
                   <div style={{
                     width: '68px',
                     height: '68px',
-                    backgroundColor: `${portal.accentColor}0a`,
+                    backgroundColor: '#f1f5f9',
                     borderRadius: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '8px',
-                    border: `1px solid ${portal.accentColor}30`,
+                    border: '1px solid #e2e8f0',
                     flexShrink: 0
                   }}>
-                    <PortalCardIcon
-                      componentId={selectedComponent.id}
-                      componentName={selectedComponent.name}
-                      accentColor={portal.accentColor}
-                      width="100%"
-                      height={44}
+                    <img
+                      src={selectedAsset.src}
+                      alt={selectedAsset.alt}
+                      style={{ maxHeight: '52px', maxWidth: '100%', objectFit: 'contain' }}
                     />
                   </div>
                   <div>

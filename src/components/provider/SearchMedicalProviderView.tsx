@@ -44,7 +44,7 @@ const DEFAULT_CENTER = {
   lon: 100.5018,
 };
 
-const RADIUS_OPTIONS = [5, 10, 20, 50, 100];
+const RADIUS_OPTIONS = [5, 10, 20, 50, 100, 500, 1000];
 export type MapStyle = 'streets' | 'satellite';
 
 function applyBaseMapTiles(L: any, tileGroup: any, style: MapStyle) {
@@ -73,7 +73,7 @@ export default function SearchMedicalProviderView({
   // Location & Filter States
   const [selectedLocation, setSelectedLocation] = useState(DEFAULT_CENTER);
   const [locationInput, setLocationInput] = useState(DEFAULT_CENTER.name);
-  const [radius, setRadius] = useState<number>(20);
+  const [radius, setRadius] = useState<number>(5);
   const [nameFilter, setNameFilter] = useState<string>('');
   const [mapStyle, setMapStyle] = useState<MapStyle>('streets');
 
@@ -150,7 +150,7 @@ export default function SearchMedicalProviderView({
           );
           setProviders(strictlyWithinRadius);
           if (strictlyWithinRadius.length === 0) {
-            setErrorMessage(`No medical providers found within ${rad} km. Try increasing the search radius.`);
+            setErrorMessage(`No medical providers found within ${rad} Km. Try increasing the search radius.`);
           }
         } else {
           setProviders([]);
@@ -528,15 +528,6 @@ export default function SearchMedicalProviderView({
           70% { transform: scale(1.6); opacity: 0; }
           100% { transform: scale(0.95); opacity: 0; }
         }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .provider-shimmer {
-          background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.4s infinite ease-in-out;
-        }
         .leaflet-container {
           width: 100%;
           height: 100%;
@@ -616,9 +607,9 @@ export default function SearchMedicalProviderView({
                       }
                     }}
                     style={{
-                      padding: '6px 14px',
+                      padding: '6px 12px',
                       borderRadius: '9px',
-                      fontSize: '12.5px',
+                      fontSize: '12px',
                       fontWeight: active ? 750 : 600,
                       cursor: 'pointer',
                       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -628,6 +619,7 @@ export default function SearchMedicalProviderView({
                       boxShadow: active
                         ? `0 2px 8px ${portal.accentColor}35, 0 1px 2px rgba(0,0,0,0.08)`
                         : 'none',
+                      whiteSpace: 'nowrap',
                     }}
                     onMouseEnter={(e) => {
                       if (!active) {
@@ -644,7 +636,7 @@ export default function SearchMedicalProviderView({
                       }
                     }}
                   >
-                    {r} km
+                    {r} Km
                   </button>
                 );
               })}
@@ -863,7 +855,7 @@ export default function SearchMedicalProviderView({
               </span>
             </div>
             <span style={{ fontSize: '12px', color: '#64748b' }}>
-              Within <strong>{radius} km</strong> of {selectedLocation.name}
+              Within <strong>{radius} Km</strong> of {selectedLocation.name}
             </span>
           </div>
 
@@ -880,11 +872,11 @@ export default function SearchMedicalProviderView({
                     padding: '18px',
                   }}
                 >
-                  <div className="provider-shimmer" style={{ width: '60%', height: '18px', borderRadius: '4px', marginBottom: '8px' }} />
-                  <div className="provider-shimmer" style={{ width: '90%', height: '14px', borderRadius: '4px', marginBottom: '12px' }} />
+                  <div className="crosslink-skeleton" style={{ width: '60%', height: '18px', borderRadius: '4px', marginBottom: '8px' }} />
+                  <div className="crosslink-skeleton" style={{ width: '90%', height: '14px', borderRadius: '4px', marginBottom: '12px' }} />
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <div className="provider-shimmer" style={{ width: '70px', height: '22px', borderRadius: '6px' }} />
-                    <div className="provider-shimmer" style={{ width: '85px', height: '22px', borderRadius: '6px' }} />
+                    <div className="crosslink-skeleton" style={{ width: '70px', height: '22px', borderRadius: '6px' }} />
+                    <div className="crosslink-skeleton" style={{ width: '85px', height: '22px', borderRadius: '6px' }} />
                   </div>
                 </div>
               ))}
@@ -940,7 +932,7 @@ export default function SearchMedicalProviderView({
                     cursor: 'pointer',
                   }}
                 >
-                  Expand Radius to 50 km
+                  Expand Radius to 50 Km
                 </button>
               </div>
             </div>
@@ -1183,7 +1175,7 @@ export default function SearchMedicalProviderView({
                   border: `1px solid ${portal.accentColor}30`,
                 }}
               >
-                {radius} km Radius
+                {radius} Km Radius
               </span>
             </div>
           </div>

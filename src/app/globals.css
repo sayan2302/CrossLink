@@ -57,11 +57,57 @@ a {
   }
 }
 
-.crosslink-skeleton {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
-  background-size: 200% 100%;
-  animation: crosslinkShimmer 1.6s infinite ease-in-out;
+@keyframes crosslinkSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  60%, 100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes crosslinkPulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+.crosslink-skeleton,
+.ecard-shimmer,
+.claims-shimmer,
+.provider-shimmer {
+  position: relative !important;
+  overflow: hidden !important;
+  background-color: #e2e8f0 !important;
   border-radius: 6px;
+  animation: crosslinkPulseSubtle 2.2s ease-in-out infinite !important;
+  will-change: transform, opacity;
+}
+
+.crosslink-skeleton::after,
+.ecard-shimmer::after,
+.claims-shimmer::after,
+.provider-shimmer::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.35) 25%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0.35) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: crosslinkSweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  content: '';
+  pointer-events: none;
 }
 
 /* =========================================================================

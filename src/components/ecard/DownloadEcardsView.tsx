@@ -399,17 +399,7 @@ export default function DownloadEcardsView({
         </ol>
       </nav>
 
-      <style>{`
-        @keyframes ecardShimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .ecard-shimmer {
-          background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-          background-size: 200% 100%;
-          animation: ecardShimmer 1.4s infinite ease-in-out;
-        }
-      `}</style>
+
 
       {/* ── SEARCH CONTROL PANEL ─────────────────────────────────────────── */}
       <div

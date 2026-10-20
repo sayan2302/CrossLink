@@ -11,6 +11,8 @@ interface ClientDetailsViewProps {
     role: string;
   };
   onBack: () => void;
+  componentId?: string;
+  componentName?: string;
 }
 
 export interface ClientEntity {
@@ -136,8 +138,20 @@ const formatLegacyDate = (val?: any): string => {
   }
 };
 
-export default function ClientDetailsView({ portal, user, onBack }: ClientDetailsViewProps) {
+export default function ClientDetailsView({
+  portal,
+  user,
+  onBack,
+  componentId,
+  componentName,
+}: ClientDetailsViewProps) {
   const { toast } = useToast();
+
+  const isMemberDetails =
+    portal.role === 'HR' ||
+    componentId === 'LawtonCorporateMemberDetails' ||
+    componentName?.toLowerCase() === 'member details';
+  const pageTitle = isMemberDetails ? 'Member Details' : 'Client Details';
 
   // Dropdown states
   const [entities, setEntities] = useState<ClientEntity[]>([]);
@@ -702,7 +716,7 @@ export default function ClientDetailsView({ portal, user, onBack }: ClientDetail
             </button>
           </li>
           <li style={{ color: '#94a3b8' }}>/</li>
-          <li style={{ color: '#64748b', fontWeight: 500 }}>Client Details</li>
+          <li style={{ color: '#64748b', fontWeight: 500 }}>{pageTitle}</li>
         </ol>
       </nav>
 
@@ -1062,46 +1076,57 @@ export default function ClientDetailsView({ portal, user, onBack }: ClientDetail
                 [0, 1, 2, 3, 4].map((idx) => (
                   <tr key={`skeleton-row-${idx}`} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#fafafa' }}>
                     {/* Leading Chevron */}
-                    <td style={{ width: '44px', padding: '16px 8px 16px 16px', textAlign: 'center' }}>
+                    <td style={{ width: '44px', padding: '14px 8px 14px 16px', textAlign: 'center' }}>
                       <div className="crosslink-skeleton" style={{ width: '28px', height: '28px', borderRadius: '50%', margin: '0 auto' }} />
                     </td>
-                    {/* Insured Name & Subtitle */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: idx % 2 === 0 ? '130px' : '110px', height: '14px', marginBottom: '6px' }} />
-                      <div className="crosslink-skeleton" style={{ width: '75px', height: '10px' }} />
+                    {/* Insured Name with Avatar Initials */}
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="crosslink-skeleton" style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }} />
+                        <div>
+                          <div className="crosslink-skeleton" style={{ width: idx % 2 === 0 ? '130px' : '110px', height: '14px', marginBottom: '6px' }} />
+                          <div className="crosslink-skeleton" style={{ width: '75px', height: '11px' }} />
+                        </div>
+                      </div>
                     </td>
                     {/* Email */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: idx % 2 === 0 ? '160px' : '140px', height: '13px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div className="crosslink-skeleton" style={{ width: '13px', height: '13px', borderRadius: '3px' }} />
+                        <div className="crosslink-skeleton" style={{ width: idx % 2 === 0 ? '160px' : '140px', height: '13px' }} />
+                      </div>
                     </td>
                     {/* Staff ID */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: '55px', height: '18px', borderRadius: '4px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '55px', height: '22px', borderRadius: '6px' }} />
                     </td>
                     {/* PIH Member ID */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: '70px', height: '18px', borderRadius: '4px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '70px', height: '22px', borderRadius: '6px' }} />
                     </td>
                     {/* Relationship */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: '65px', height: '18px', borderRadius: '9999px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '65px', height: '20px', borderRadius: '6px' }} />
                     </td>
                     {/* Policy Status */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: '75px', height: '18px', borderRadius: '9999px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <div className="crosslink-skeleton" style={{ width: '6px', height: '6px', borderRadius: '50%' }} />
+                        <div className="crosslink-skeleton" style={{ width: '75px', height: '14px', borderRadius: '4px' }} />
+                      </div>
                     </td>
                     {/* Original Entry Date */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: '85px', height: '13px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '85px', height: '14px' }} />
                     </td>
                     {/* Effective-Expiry */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: '95px', height: '13px', marginBottom: '4px' }} />
-                      <div className="crosslink-skeleton" style={{ width: '80px', height: '10px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '90px', height: '13px', marginBottom: '4px' }} />
+                      <div className="crosslink-skeleton" style={{ width: '80px', height: '11px' }} />
                     </td>
                     {/* Member Status */}
-                    <td style={{ padding: '16px' }}>
-                      <div className="crosslink-skeleton" style={{ width: '60px', height: '20px', borderRadius: '9999px' }} />
+                    <td style={{ padding: '14px 16px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '65px', height: '22px', borderRadius: '9999px' }} />
                     </td>
                   </tr>
                 ))
@@ -2040,19 +2065,14 @@ export default function ClientDetailsView({ portal, user, onBack }: ClientDetail
                 }}
               >
                 {editLoading ? (
-                  <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
-                    <div
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        border: '3px solid #cbd5e1',
-                        borderTopColor: '#002D62',
-                        animation: 'spin 0.8s linear infinite',
-                        margin: '0 auto 12px auto',
-                      }}
-                    />
-                    <span>Loading beneficiary data...</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
+                    <div className="crosslink-skeleton" style={{ width: '160px', height: '18px', marginBottom: '8px' }} />
+                    {[1, 2, 3, 4, 5, 6].map((idx) => (
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div className="crosslink-skeleton" style={{ width: idx % 2 === 0 ? '110px' : '85px', height: '13px' }} />
+                        <div className="crosslink-skeleton" style={{ width: '100%', height: '38px', borderRadius: '6px' }} />
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <form id="editBenefForm" onSubmit={handleSaveBeneficiary}>
@@ -2553,18 +2573,59 @@ export default function ClientDetailsView({ portal, user, onBack }: ClientDetail
             {/* Content Area */}
             <div style={{ flex: 1, position: 'relative', minHeight: '520px', backgroundColor: '#f1f5f9' }}>
               {pdfModal.loading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '520px', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '36px 20px', minHeight: '520px' }}>
                   <div
                     style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%',
-                      border: '3px solid #cbd5e1',
-                      borderTopColor: '#002D62',
-                      animation: 'spin 0.8s linear infinite',
+                      width: '100%',
+                      maxWidth: '560px',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
+                      padding: '32px 36px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '18px',
                     }}
-                  />
-                  <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Loading document...</span>
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '140px', height: '24px', borderRadius: '6px' }} />
+                      <div className="crosslink-skeleton" style={{ width: '80px', height: '20px', borderRadius: '9999px' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                      <div className="crosslink-skeleton" style={{ width: '56px', height: '56px', borderRadius: '10px' }} />
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div className="crosslink-skeleton" style={{ width: '70%', height: '16px' }} />
+                        <div className="crosslink-skeleton" style={{ width: '45%', height: '12px' }} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '8px' }}>
+                      <div className="crosslink-skeleton" style={{ height: '48px', borderRadius: '8px' }} />
+                      <div className="crosslink-skeleton" style={{ height: '48px', borderRadius: '8px' }} />
+                      <div className="crosslink-skeleton" style={{ height: '48px', borderRadius: '8px' }} />
+                      <div className="crosslink-skeleton" style={{ height: '48px', borderRadius: '8px' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                      <div className="crosslink-skeleton" style={{ width: '100%', height: '10px' }} />
+                      <div className="crosslink-skeleton" style={{ width: '92%', height: '10px' }} />
+                      <div className="crosslink-skeleton" style={{ width: '60%', height: '10px' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
+                    <div
+                      style={{
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        border: '2px solid #cbd5e1',
+                        borderTopColor: '#002D62',
+                        animation: 'spin 0.8s linear infinite',
+                      }}
+                    />
+                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+                      Rendering official certificate preview...
+                    </span>
+                  </div>
                 </div>
               ) : pdfModal.pdfUrl ? (
                 <iframe

@@ -153,14 +153,14 @@ export default function PolicyListView({
     fetchPolicies();
   }, [fetchPolicies]);
 
-  // Toggle Card Drawers
+  // Toggle Card Drawers (Exclusive single accordion)
   const toggleDrawer = (policyId: number, type: 'DOCS' | 'BENEF') => {
     setExpandedCards((prev) => {
       const current = prev[policyId];
       if (current === type) {
-        return { ...prev, [policyId]: null };
+        return {}; // Close this accordion if already open
       }
-      return { ...prev, [policyId]: type };
+      return { [policyId]: type }; // Open only this policy drawer
     });
 
     if (type === 'DOCS') {
@@ -278,7 +278,9 @@ export default function PolicyListView({
         return a.policyNumber.localeCompare(b.policyNumber);
       }
       if (sortBy === 'PLAN_NAME') {
-        return a.planName.localeCompare(b.planName);
+        const nameA = a.policyHolderName || a.planName || '';
+        const nameB = b.policyHolderName || b.planName || '';
+        return nameA.localeCompare(nameB);
       }
       return 0;
     });
@@ -286,52 +288,25 @@ export default function PolicyListView({
     return result;
   }, [policies, statusFilter, searchQuery, sortBy]);
 
-  // Aggregate KPIs
-  const kpis = useMemo(() => {
-    const total = policies.length;
-    const active = policies.filter((p) => p.status === 'Active').length;
-    const totalLives = Object.values(livesCounts).reduce((acc, curr) => acc + curr, 0);
-
-    const now = new Date();
-    const thirtyDays = new Date();
-    thirtyDays.setDate(thirtyDays.getDate() + 30);
-
-    const expiringSoon = policies.filter((p) => {
-      if (p.status !== 'Active' || !p.endDateMs) return false;
-      const end = new Date(p.endDateMs);
-      return end >= now && end <= thirtyDays;
-    }).length;
-
-    return { total, active, totalLives, expiringSoon };
-  }, [policies, livesCounts]);
-
-  // Export Beneficiaries to CSV
-  const exportBeneficiariesCSV = (policyId: number, policyNo: string) => {
-    const state = benefCache[policyId];
-    if (!state || !state.list.length) return;
-
-    const headers = ['First Name', 'Last Name', 'Employee ID', 'Relation', 'Status'];
-    const rows = state.list.map((b) => [
-      `"${b.firstName || ''}"`,
-      `"${b.lastName || ''}"`,
-      `"${b.empId || ''}"`,
-      `"${b.relation || ''}"`,
-      `"${b.memberStatus || 'Active'}"`,
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Beneficiaries_${policyNo}_Page${state.page}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 0 80px 0' }}>
+      <style>{`
+        @keyframes crosslinkPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        @keyframes crosslinkAccordionOpen {
+          0% {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       {/* ── BREADCRUMB ───────────────────────────────────────────────────── */}
       <nav aria-label="Breadcrumb" style={{ marginBottom: '20px' }}>
         <ol
@@ -371,192 +346,6 @@ export default function PolicyListView({
         </ol>
       </nav>
 
-      {/* ── TOP KPI SUMMARY CARDS ────────────────────────────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '16px',
-          marginBottom: '28px',
-        }}
-      >
-        {/* KPI 1: Total Policies */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '20px 22px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Total Policies
-            </span>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-              {loading ? '-' : kpis.total}
-            </div>
-            <span style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', display: 'block' }}>
-              Enrolled in portfolio
-            </span>
-          </div>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              backgroundColor: '#eff6ff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#2563eb',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
-            </svg>
-          </div>
-        </div>
-
-        {/* KPI 2: Active Policies */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '20px 22px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Active Coverage
-            </span>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#16a34a', marginTop: '4px' }}>
-              {loading ? '-' : kpis.active}
-            </div>
-            <span style={{ fontSize: '12px', color: '#16a34a', marginTop: '2px', display: 'block', fontWeight: 600 }}>
-              Live & Valid
-            </span>
-          </div>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              backgroundColor: '#f0fdf4',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#16a34a',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-          </div>
-        </div>
-
-        {/* KPI 3: Total Insured Lives */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '20px 22px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Insured Lives
-            </span>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-              {loading ? '-' : kpis.totalLives > 0 ? kpis.totalLives.toLocaleString() : 'Live Synced'}
-            </div>
-            <span style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', display: 'block' }}>
-              Covered employees & family
-            </span>
-          </div>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              backgroundColor: `${portal.accentColor}12`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: portal.accentColor,
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          </div>
-        </div>
-
-        {/* KPI 4: Expiring Soon */}
-        <div
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '14px',
-            border: '1px solid #e2e8f0',
-            padding: '20px 22px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Expiring Soon
-            </span>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: kpis.expiringSoon > 0 ? '#ea580c' : '#0f172a', marginTop: '4px' }}>
-              {loading ? '-' : kpis.expiringSoon}
-            </div>
-            <span style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', display: 'block' }}>
-              Within next 30 days
-            </span>
-          </div>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              backgroundColor: '#fff7ed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ea580c',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
-        </div>
-      </div>
 
       {/* ── FILTER & CONTROLS BAR ────────────────────────────────────────── */}
       <div
@@ -645,48 +434,9 @@ export default function PolicyListView({
           >
             <option value="EXPIRY">Sort by Expiry Date</option>
             <option value="POLICY_NO">Sort by Policy Number</option>
-            <option value="PLAN_NAME">Sort by Plan Name</option>
+            <option value="PLAN_NAME">Sort by Corporate / Plan Name</option>
           </select>
 
-          {/* Refresh Action Button */}
-          <button
-            type="button"
-            onClick={() => fetchPolicies(true)}
-            disabled={loading || refreshing}
-            title="Refresh policies"
-            style={{
-              height: '38px',
-              padding: '0 14px',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0',
-              backgroundColor: '#f8fafc',
-              color: '#475569',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: refreshing ? 'wait' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              style={{
-                transform: refreshing ? 'rotate(360deg)' : 'none',
-                transition: 'transform 0.5s ease',
-              }}
-            >
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            Refresh
-          </button>
         </div>
       </div>
 
@@ -740,18 +490,21 @@ export default function PolicyListView({
                 border: '1px solid #e2e8f0',
                 borderRadius: '14px',
                 padding: '24px',
-                height: '110px',
-                animation: 'pulse 1.5s infinite ease-in-out',
+                minHeight: '110px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
               }}
             >
-              <div style={{ width: '40%' }}>
-                <div style={{ height: '18px', backgroundColor: '#e2e8f0', borderRadius: '4px', marginBottom: '8px' }} />
-                <div style={{ height: '12px', backgroundColor: '#f1f5f9', width: '60%', borderRadius: '4px' }} />
+              <div style={{ width: '45%' }}>
+                <div className="crosslink-skeleton" style={{ height: '18px', width: '80%', marginBottom: '10px' }} />
+                <div className="crosslink-skeleton" style={{ height: '12px', width: '55%' }} />
               </div>
-              <div style={{ width: '120px', height: '36px', backgroundColor: '#f1f5f9', borderRadius: '8px' }} />
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div className="crosslink-skeleton" style={{ width: '90px', height: '24px', borderRadius: '9999px' }} />
+                <div className="crosslink-skeleton" style={{ width: '120px', height: '36px', borderRadius: '8px' }} />
+              </div>
             </div>
           ))}
         </div>
@@ -826,22 +579,18 @@ export default function PolicyListView({
             const activeDrawer = expandedCards[p.policyId];
             const isDocsOpen = activeDrawer === 'DOCS';
             const isBenefOpen = activeDrawer === 'BENEF';
+            const isCardOpen = isDocsOpen || isBenefOpen;
             const liveCount = livesCounts[p.policyId] !== undefined ? livesCounts[p.policyId] : '-';
-
-            // Status Styling
-            const isStatusActive = p.status === 'Active';
-            const statusBg = isStatusActive ? '#f0fdf4' : p.status === 'Future' ? '#fffbeb' : '#f8fafc';
-            const statusText = isStatusActive ? '#15803d' : p.status === 'Future' ? '#b45309' : '#64748b';
-            const statusBorder = isStatusActive ? '#bbf7d0' : p.status === 'Future' ? '#fde68a' : '#e2e8f0';
+            const planHeader = p.policyHolderName || p.corporateName || p.planName || 'Policy';
 
             return (
               <div
                 key={`${p.policyNumber}-${p.policyId}-${idx}`}
                 style={{
-                  backgroundColor: '#ffffff',
-                  border: isDocsOpen || isBenefOpen ? `1.5px solid ${portal.accentColor}` : '1px solid #e2e8f0',
+                  backgroundColor: isCardOpen ? '#f0f7ff' : '#ffffff',
+                  border: isCardOpen ? '1.5px solid #60a5fa' : '1px solid #e2e8f0',
                   borderRadius: '16px',
-                  boxShadow: isDocsOpen || isBenefOpen ? `0 8px 24px ${portal.accentColor}18` : '0 2px 6px rgba(15, 23, 42, 0.04)',
+                  boxShadow: isCardOpen ? '0 10px 25px -5px rgba(59, 130, 246, 0.18)' : '0 2px 6px rgba(15, 23, 42, 0.04)',
                   transition: 'all 0.2s ease',
                   overflow: 'hidden',
                 }}
@@ -855,78 +604,26 @@ export default function PolicyListView({
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: '16px',
-                    backgroundColor: isDocsOpen || isBenefOpen ? '#fcfdfe' : '#ffffff',
+                    backgroundColor: isCardOpen ? '#f0f7ff' : '#ffffff',
                   }}
                 >
                   {/* Left: Policy Identification */}
                   <div style={{ flex: '1 1 320px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
                       <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                        {p.planName}
+                        {planHeader} &nbsp;&ndash;&nbsp; {p.policyNumber}
                       </h3>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          padding: '3px 9px',
-                          borderRadius: '20px',
-                          backgroundColor: statusBg,
-                          color: statusText,
-                          border: `1px solid ${statusBorder}`,
-                        }}
-                      >
-                        {p.status}
-                      </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '13px', color: '#64748b' }}>
-                      <span style={{ fontWeight: 600, color: '#1e293b' }}>
-                        Pol #{p.policyNumber}
-                      </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', fontSize: '13px', color: '#64748b' }}>
+                      <span><strong style={{ color: '#475569' }}>Policy ID:</strong> {p.policyId}</span>
                       <span>•</span>
-                      <span>ID: {p.policyId}</span>
-                      <span>•</span>
-                      <span>
-                        Validity: {p.startDate || 'N/A'} &rarr; {p.endDate || 'N/A'}
-                      </span>
-                      {p.policyHolderName && (
-                        <>
-                          <span>•</span>
-                          <span style={{ color: '#475569' }}>{p.policyHolderName}</span>
-                        </>
-                      )}
+                      <span><strong style={{ color: '#475569' }}>Validity:</strong> {p.startDate || 'N/A'} &ndash; {p.endDate || 'N/A'}</span>
                     </div>
                   </div>
 
-                  {/* Right: Actions & Live Badges */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                    {/* Active Lives Badge */}
-                    <div
-                      title="Total active insured beneficiaries"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 14px',
-                        borderRadius: '20px',
-                        backgroundColor: '#eff6ff',
-                        border: '1px solid #bfdbfe',
-                        color: '#2563eb',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                      }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                      <span>{liveCount} Lives</span>
-                    </div>
-
+                  {/* Right: Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
                     {/* Toggle Documents Drawer Button */}
                     <button
                       type="button"
@@ -935,17 +632,42 @@ export default function PolicyListView({
                       style={{
                         height: '38px',
                         padding: '0 14px',
-                        borderRadius: '8px',
+                        borderRadius: '10px',
                         border: isDocsOpen ? `1px solid ${portal.accentColor}` : '1px solid #cbd5e1',
-                        backgroundColor: isDocsOpen ? `${portal.accentColor}12` : '#ffffff',
-                        color: isDocsOpen ? portal.accentColor : '#334155',
+                        backgroundColor: isDocsOpen ? portal.accentColor : '#ffffff',
+                        color: isDocsOpen ? '#ffffff' : '#1e293b',
                         fontSize: '13px',
                         fontWeight: 650,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        transition: 'all 0.15s ease',
+                        boxShadow: isDocsOpen ? `0 4px 12px ${portal.accentColor}35` : '0 1px 2px rgba(15, 23, 42, 0.04)',
+                        transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isDocsOpen) {
+                          e.currentTarget.style.backgroundColor = '#f8fafc';
+                          e.currentTarget.style.borderColor = portal.accentColor;
+                          e.currentTarget.style.color = portal.accentColor;
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.08)';
+                        } else {
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = `0 6px 16px ${portal.accentColor}50`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isDocsOpen) {
+                          e.currentTarget.style.backgroundColor = '#ffffff';
+                          e.currentTarget.style.borderColor = '#cbd5e1';
+                          e.currentTarget.style.color = '#1e293b';
+                          e.currentTarget.style.transform = 'none';
+                          e.currentTarget.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.04)';
+                        } else {
+                          e.currentTarget.style.transform = 'none';
+                          e.currentTarget.style.boxShadow = `0 4px 12px ${portal.accentColor}35`;
+                        }
                       }}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -977,17 +699,42 @@ export default function PolicyListView({
                       style={{
                         height: '38px',
                         padding: '0 14px',
-                        borderRadius: '8px',
+                        borderRadius: '10px',
                         border: isBenefOpen ? `1px solid ${portal.accentColor}` : '1px solid #cbd5e1',
-                        backgroundColor: isBenefOpen ? `${portal.accentColor}12` : '#ffffff',
-                        color: isBenefOpen ? portal.accentColor : '#334155',
+                        backgroundColor: isBenefOpen ? portal.accentColor : '#ffffff',
+                        color: isBenefOpen ? '#ffffff' : '#1e293b',
                         fontSize: '13px',
                         fontWeight: 650,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        transition: 'all 0.15s ease',
+                        boxShadow: isBenefOpen ? `0 4px 12px ${portal.accentColor}35` : '0 1px 2px rgba(15, 23, 42, 0.04)',
+                        transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isBenefOpen) {
+                          e.currentTarget.style.backgroundColor = '#f8fafc';
+                          e.currentTarget.style.borderColor = portal.accentColor;
+                          e.currentTarget.style.color = portal.accentColor;
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.08)';
+                        } else {
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = `0 6px 16px ${portal.accentColor}50`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isBenefOpen) {
+                          e.currentTarget.style.backgroundColor = '#ffffff';
+                          e.currentTarget.style.borderColor = '#cbd5e1';
+                          e.currentTarget.style.color = '#1e293b';
+                          e.currentTarget.style.transform = 'none';
+                          e.currentTarget.style.boxShadow = '0 1px 2px rgba(15, 23, 42, 0.04)';
+                        } else {
+                          e.currentTarget.style.transform = 'none';
+                          e.currentTarget.style.boxShadow = `0 4px 12px ${portal.accentColor}35`;
+                        }
                       }}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -995,6 +742,21 @@ export default function PolicyListView({
                         <circle cx="9" cy="7" r="4" />
                       </svg>
                       <span>Beneficiaries</span>
+                      <span
+                        style={{
+                          marginLeft: '2px',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          backgroundColor: isBenefOpen ? 'rgba(255, 255, 255, 0.25)' : '#eff6ff',
+                          color: isBenefOpen ? '#ffffff' : '#2563eb',
+                          border: isBenefOpen ? '1px solid rgba(255, 255, 255, 0.35)' : '1px solid #bfdbfe',
+                          transition: 'all 0.18s ease',
+                        }}
+                      >
+                        {liveCount} Lives
+                      </span>
                       <svg
                         width="12"
                         height="12"
@@ -1017,23 +779,49 @@ export default function PolicyListView({
                 {isDocsOpen && (
                   <div
                     style={{
-                      borderTop: '1px solid #e2e8f0',
-                      backgroundColor: '#f8fafc',
+                      borderTop: '1px solid #dbeafe',
+                      backgroundColor: '#f8faff',
                       padding: '20px 24px',
+                      animation: 'crosslinkAccordionOpen 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                      transformOrigin: 'top center',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0 }}>
-                        Policy Documents & Services
-                      </h4>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>
-                        Pol #{p.policyNumber} (ID: {p.policyId})
-                      </span>
-                    </div>
-
                     {docsCache[p.policyId]?.loading ? (
-                      <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748b', fontSize: '13px' }}>
-                        Loading documents...
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                          gap: '12px',
+                        }}
+                      >
+                        {[1, 2, 3].map((n) => (
+                          <div
+                            key={n}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              padding: '12px 16px',
+                              borderRadius: '10px',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #e2e8f0',
+                            }}
+                          >
+                            <div
+                              className="crosslink-skeleton"
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '8px',
+                                flexShrink: 0,
+                              }}
+                            />
+                            <div style={{ flex: 1 }}>
+                              <div className="crosslink-skeleton" style={{ width: '75%', height: '14px', marginBottom: '6px' }} />
+                              <div className="crosslink-skeleton" style={{ width: '50%', height: '11px' }} />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <div
@@ -1109,7 +897,7 @@ export default function PolicyListView({
                                   {doc.fileName}
                                 </div>
                                 <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-                                  {isClaimForm ? 'Standard Claim Form PDF' : isNetworkHospital ? 'Provider Search Directory' : 'Policy Attachment'}
+                                  {isClaimForm ? 'Standard Claim Form PDF' : isNetworkHospital ? 'Provider Search Directory' : 'Policy Document Attachment'}
                                 </div>
                               </div>
                               <div style={{ color: '#94a3b8' }}>
@@ -1127,63 +915,40 @@ export default function PolicyListView({
                 {isBenefOpen && (
                   <div
                     style={{
-                      borderTop: '1px solid #e2e8f0',
-                      backgroundColor: '#f8fafc',
+                      borderTop: '1px solid #dbeafe',
+                      backgroundColor: '#f8faff',
                       padding: '20px 24px',
+                      animation: 'crosslinkAccordionOpen 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                      transformOrigin: 'top center',
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: '12px',
-                        marginBottom: '16px',
-                      }}
-                    >
-                      <div>
-                        <h4 style={{ fontSize: '14.5px', fontWeight: 700, color: '#1e293b', margin: '0 0 2px 0' }}>
-                          Insured Beneficiaries Roster
-                        </h4>
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>
-                          Showing beneficiaries for Policy #{p.policyNumber} (Total: {benefCache[p.policyId]?.totalCount || 0})
-                        </span>
-                      </div>
-
-                      {/* Export CSV action */}
-                      <button
-                        type="button"
-                        onClick={() => exportBeneficiariesCSV(p.policyId, p.policyNumber)}
-                        disabled={!benefCache[p.policyId]?.list?.length}
-                        style={{
-                          height: '32px',
-                          padding: '0 12px',
-                          borderRadius: '6px',
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #cbd5e1',
-                          color: '#334155',
-                          fontSize: '12.5px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="7 10 12 15 17 10" />
-                          <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        Export CSV
-                      </button>
-                    </div>
-
                     {/* Beneficiaries Table */}
                     {benefCache[p.policyId]?.loading ? (
-                      <div style={{ textAlign: 'center', padding: '36px 0', color: '#64748b', fontSize: '13px' }}>
-                        Loading beneficiaries for policy #{p.policyNumber}...
+                      <div
+                        style={{
+                          overflowX: 'auto',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                          padding: '16px 20px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                            <div className="crosslink-skeleton" style={{ height: '14px', width: '25%' }} />
+                            <div className="crosslink-skeleton" style={{ height: '14px', width: '25%' }} />
+                            <div className="crosslink-skeleton" style={{ height: '14px', width: '25%' }} />
+                            <div className="crosslink-skeleton" style={{ height: '14px', width: '25%' }} />
+                          </div>
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <div key={n} style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '6px 0' }}>
+                              <div className="crosslink-skeleton" style={{ height: '12px', width: '25%' }} />
+                              <div className="crosslink-skeleton" style={{ height: '12px', width: '25%' }} />
+                              <div className="crosslink-skeleton" style={{ height: '12px', width: '25%' }} />
+                              <div className="crosslink-skeleton" style={{ height: '12px', width: '25%' }} />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ) : !benefCache[p.policyId]?.list?.length ? (
                       <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8', fontSize: '13.5px' }}>
@@ -1203,22 +968,19 @@ export default function PolicyListView({
                           }}
                         >
                           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                            <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f8fafc', zIndex: 1 }}>
-                              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <th style={{ padding: '10px 14px', fontWeight: 650, color: '#475569', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.04em' }}>
+                            <thead style={{ position: 'sticky', top: 0, backgroundColor: '#e2e8f0', zIndex: 1 }}>
+                              <tr style={{ backgroundColor: '#e2e8f0', borderBottom: '1px solid #cbd5e1' }}>
+                                <th style={{ padding: '12px 14px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.06em' }}>
                                   First Name
                                 </th>
-                                <th style={{ padding: '10px 14px', fontWeight: 650, color: '#475569', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.04em' }}>
+                                <th style={{ padding: '12px 14px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.06em' }}>
                                   Last Name
                                 </th>
-                                <th style={{ padding: '10px 14px', fontWeight: 650, color: '#475569', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.04em' }}>
-                                  Emp ID / Staff ID
+                                <th style={{ padding: '12px 14px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.06em' }}>
+                                  Emp ID
                                 </th>
-                                <th style={{ padding: '10px 14px', fontWeight: 650, color: '#475569', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.04em' }}>
+                                <th style={{ padding: '12px 14px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.06em' }}>
                                   Relationship
-                                </th>
-                                <th style={{ padding: '10px 14px', fontWeight: 650, color: '#475569', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.04em' }}>
-                                  Status
                                 </th>
                               </tr>
                             </thead>
@@ -1256,21 +1018,6 @@ export default function PolicyListView({
                                       }}
                                     >
                                       {b.relation || 'Dependent'}
-                                    </span>
-                                  </td>
-                                  <td style={{ padding: '10px 14px' }}>
-                                    <span
-                                      style={{
-                                        display: 'inline-block',
-                                        width: '8px',
-                                        height: '8px',
-                                        borderRadius: '50%',
-                                        backgroundColor: '#16a34a',
-                                        marginRight: '6px',
-                                      }}
-                                    />
-                                    <span style={{ fontSize: '12px', color: '#334155' }}>
-                                      {b.memberStatus || 'Active'}
                                     </span>
                                   </td>
                                 </tr>
