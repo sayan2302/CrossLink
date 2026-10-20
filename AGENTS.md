@@ -105,13 +105,88 @@ CrossLink MUST NEVER directly call external microservices, IPMI backend services
 
 ---
 
-## 6. Strict Multi-Tenant Independence & 1-to-1 Mapping Rule
+## 6. Strict Codebase Folder Structure & Architectural Standards
+
+> **MANDATORY ARCHITECTURAL DIRECTIVE FOR ALL AGENTS**:
+> The CrossLink codebase has been refactored into a strict, unified folder structure. All future additions, migrations, and bug fixes MUST strictly follow this layout without deviation or creating ad-hoc directories.
+
+### Master Folder Structure
+```
+c:\ALL\OFFICE\crosslink/
+├── public/                     # Static assets ONLY (Resources/, images/). NO unused starter SVGs or temporary files.
+├── src/
+│   ├── app/                    # Next.js App Router root
+│   │   ├── api/                # Backend-For-Frontend (BFF) proxy routes
+│   │   │   ├── auth/           # Login, logout, session routes
+│   │   │   ├── broker/         # Broker claim submission, client routes
+│   │   │   ├── claims/         # Claims list, detail, timeline, entities, policies routes
+│   │   │   ├── dev/            # Developer tenant switching routes
+│   │   │   ├── ecard/          # e-Card search and PDF generation routes
+│   │   │   ├── policy/         # Policy coverage, details, member enrollment routes
+│   │   │   ├── profile/        # User profile, password, photo routes
+│   │   │   └── provider/       # Medical provider search, geocoding routes
+│   │   ├── dashboard/          # Next.js route guard only (/dashboard) -> renders DashboardHost
+│   │   │   └── page.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css         # Global design tokens and typography
+│   │   ├── layout.tsx          # Root HTML layout and providers
+│   │   └── page.tsx            # Root entry route (/) -> resolves and renders LOGIN_REGISTRY
+│   ├── components/             # Application-level shell orchestrators ONLY
+│   │   ├── layout/
+│   │   │   └── TopNavigation.tsx # Global header navigation bar
+│   │   ├── DashboardHost.tsx   # Lightweight client shell routing to DASHBOARD_REGISTRY & COMPONENT_REGISTRY
+│   │   └── DevPortalSwitcher.tsx # Dev environment portal switcher
+│   ├── config/                 # Static metadata, tenant presets, dynamic component contracts
+│   │   ├── component-assets.ts # Legacy illustration asset mapping
+│   │   ├── components.ts       # MongoDB ComponentMeta interface definitions
+│   │   └── tenants.ts          # Tenant brand definitions, primary/accent colors, logos
+│   ├── context/                # React global contexts (e.g. ToastContext)
+│   ├── lib/                    # Centralized, shared business and networking utilities
+│   │   ├── bff.ts              # Mandatory unified BFF proxy client and session helpers
+│   │   ├── date.ts             # Date parsing and formatting utilities
+│   │   ├── formatters.ts       # Currency and number formatting
+│   │   └── index.ts            # Barrel exports for @/lib
+│   └── tenants/                # STRICT 1-TO-1 INDEPENDENT PORTAL MODULES
+│       ├── Common/             # Pure UI primitives only (types.ts, UnmigratedSpecModal, pure base components)
+│       ├── registry.ts         # Single Source of Truth: COMPONENT_REGISTRY, DASHBOARD_REGISTRY, LOGIN_REGISTRY
+│       ├── Mayfair/
+│       │   ├── Corporate/      # Dashboard/, Login/, and 7 dedicated module folders
+│       │   ├── Partner/        # Dashboard/, Login/, and 5 dedicated module folders
+│       │   └── Insurer/        # Dashboard/, Login/, and 6 dedicated module folders
+│       └── Lawton/
+│           ├── Corporate/      # Dashboard/, Login/, and 7 dedicated module folders
+│           └── Partner/        # Dashboard/, Login/, and 10 dedicated module folders
+```
+
+---
+
+## 7. BFF API Route Implementation Rules (`src/app/api/...`)
+
+Every Next.js API route acts as a Backend-For-Frontend (BFF) proxy to `dx-adapter` (port 3001) and MUST adhere to the following rules:
+
+1. **Mandatory `@/lib/bff` Consumption**:
+   - All session retrieval, authentication validation, and adapter URL resolutions MUST use [`src/lib/bff.ts`](file:///c:/ALL/OFFICE/crosslink/src/lib/bff.ts):
+     ```ts
+     import { NextResponse } from 'next/server';
+     import { getClaimsSessionContext, DX_ADAPTER_URL } from '@/lib/bff';
+     ```
+   - **STRICTLY FORBIDDEN**: Creating local `bff-helper.ts` files inside individual API route subdirectories. All helper functions must reside centrally in `@/lib/bff`.
+
+2. **Session Context Propagation**:
+   - Always extract and forward session context headers (`x-api-key`, `x-tenant-id`, `x-role`, and JWT authorization) when calling `dx-adapter`.
+
+3. **Strict Mediation Rule (Zero Direct External API Calls)**:
+   - CrossLink MUST NEVER directly call external microservices, IPMI backend services, or third-party APIs. Every single backend interaction MUST be routed exclusively through `dx-adapter` (`http://localhost:3001/api`).
+
+---
+
+## 8. Strict Multi-Tenant Independence & 1-to-1 Mapping Rule
 
 > **CRITICAL ARCHITECTURAL MANDATE (ZERO CONDITIONAL BRANCHING IN VIEWS)**:
 > CrossLink serves multiple tenants (Mayfair, Lawton Asia) and roles (HR, Broker, Insurer) with distinct business workflows, data models, and regulatory requirements. To prevent cross-tenant data leaks, unintended side-effects, and maintenance fragility, all portal views MUST adhere to the **Strict 1-to-1 Mapping and Complete Independence Architecture**.
 
 ### Rules of Independence:
-1. **Directory Structure**:
+1. **Dedicated Directory Per Module, Dashboard, and Login**:
    All portal-facing module components, landing dashboards, and login views MUST reside in their dedicated directory matching their tenant and role hierarchy:
    ```
    src/tenants/<Tenant>/<Role>/<Module>/index.tsx
@@ -142,16 +217,22 @@ CrossLink MUST NEVER directly call external microservices, IPMI backend services
    - Reusable primitives used across tenants must be completely pure and accept configuration via explicit props (e.g., `phonePrefix`, `title`, `columns`) rather than inspecting `portalKey` or `role` internally to make assumptions.
    - NEVER create monolithic "Base" views that bundle multiple tenants' incompatible logic.
 
+5. **Strict Scope of `src/components/` (Zero Clutter Rule)**:
+   - `src/components/` is strictly reserved for global application-level layout orchestrators (`DashboardHost.tsx`, `DevPortalSwitcher.tsx`, `layout/TopNavigation.tsx`).
+   - NEVER create portal-specific components, loose view files, or subfolders like `components/dashboard/` inside `src/components/`. All portal views live in `src/tenants/`.
+   - NEVER introduce dead code, obsolete prototype components, or unused boilerplate (`page.module.css`, template SVGs, scratch scripts).
+
 ---
 
-## 7. Strict Agent Workflow Rules
+## 9. Strict Agent Workflow Rules
 
 1. **Sequential Phase Progression**:
    - **Phase 1: Discussion** -> Clarify requirements, architecture, and intent.
    - **Phase 2: Planning** -> Propose structured implementation plan.
    - **Phase 3: Coding** -> ONLY write code after explicit user instruction/approval.
-2. **Preserve 1-to-1 Tenant Independence**:
+2. **Preserve 1-to-1 Tenant Independence & BFF Pattern**:
    - Any new component or migration MUST be created as an independent module under `src/tenants/<Tenant>/<Role>/<Module>/index.tsx` and registered in `src/tenants/registry.ts`.
+   - Any new API route MUST use `@/lib/bff` and forward valid session context to `dx-adapter`.
    - Never add multi-tenant or multi-role conditional checks into existing views.
 3. **No Unsolicited Modifications**:
    - Do NOT modify the legacy repository (`mayfairmemberportal`) without explicit instruction.
