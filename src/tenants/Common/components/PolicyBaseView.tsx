@@ -14,7 +14,8 @@ interface UserSession {
 interface PolicyListViewProps {
   portal: PortalConfig;
   user: UserSession;
-  componentId: string;
+  componentId?: string;
+  title?: string;
   onBack: () => void;
 }
 
@@ -58,18 +59,11 @@ export interface PolicyDocumentItem {
 export default function PolicyListView({
   portal,
   user,
-  componentId,
+  title,
   onBack,
 }: PolicyListViewProps) {
-  // Page Title based on Portal / Component
-  const pageTitle = useMemo(() => {
-    if (componentId === 'LawtonPartnerPolicyList') return 'Policy List & Endorsements';
-    if (componentId === 'LawtonCorporateMemberDetails') return 'Policy Management Dashboard';
-    if (componentId === 'MayfairCorporatePolicyDetails') return 'Policy Details & Benefits';
-    if (componentId === 'MayfairPartnerPolicyCoverage') return 'Policy Coverage Summary';
-    if (componentId === 'MayfairInsurerPolicyCoverage') return 'Policy Coverage Audit';
-    return 'Policy Management Dashboard';
-  }, [componentId]);
+  // Pure explicit Page Title without if/else component checks
+  const pageTitle = title || 'Policy Management Dashboard';
 
   // Main Policy List State
   const [policies, setPolicies] = useState<PolicyItem[]>([]);

@@ -11,6 +11,8 @@ interface ProfileViewProps {
     role: string;
   };
   onBack: () => void;
+  phonePrefix?: string;
+  defaultRoleName?: string;
 }
 
 interface UserProfileData {
@@ -27,7 +29,13 @@ interface UserProfileData {
   role?: string;
 }
 
-export default function ProfileView({ portal, user, onBack }: ProfileViewProps) {
+export default function ProfileView({
+  portal,
+  user,
+  onBack,
+  phonePrefix = '+91-',
+  defaultRoleName,
+}: ProfileViewProps) {
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfileData>({
     userName: user.username,
@@ -35,8 +43,8 @@ export default function ProfileView({ portal, user, onBack }: ProfileViewProps) 
     emailId: '',
     mobile: '',
     address: '',
-    phonePrefix: portal.portalKey.includes('Lawton') ? '+66-' : '+91-',
-    role: portal.role,
+    phonePrefix: phonePrefix,
+    role: defaultRoleName || portal.role,
   });
 
   const [loading, setLoading] = useState(true);
@@ -122,7 +130,7 @@ export default function ProfileView({ portal, user, onBack }: ProfileViewProps) 
               emailId: data.emailId || prev.emailId,
               mobile: data.mobile || '',
               address: data.address ?? prev.address,
-              phonePrefix: data.phonePrefix || (portal.portalKey.includes('Lawton') ? '+66-' : '+91-'),
+              phonePrefix: data.phonePrefix || phonePrefix,
             }));
             setEditAddress(data.address || '');
             setEditMobile(data.mobile || '');
@@ -139,7 +147,7 @@ export default function ProfileView({ portal, user, onBack }: ProfileViewProps) 
     return () => {
       isMounted = false;
     };
-  }, [portal.portalKey]);
+  }, [phonePrefix]);
 
   // Handle Photo Upload
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

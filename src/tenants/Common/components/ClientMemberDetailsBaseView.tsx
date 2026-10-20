@@ -13,6 +13,7 @@ interface ClientDetailsViewProps {
   onBack: () => void;
   componentId?: string;
   componentName?: string;
+  title?: string;
 }
 
 export interface ClientEntity {
@@ -142,16 +143,13 @@ export default function ClientDetailsView({
   portal,
   user,
   onBack,
-  componentId,
+  title,
   componentName,
 }: ClientDetailsViewProps) {
   const { toast } = useToast();
 
-  const isMemberDetails =
-    portal.role === 'HR' ||
-    componentId === 'LawtonCorporateMemberDetails' ||
-    componentName?.toLowerCase() === 'member details';
-  const pageTitle = isMemberDetails ? 'Member Details' : 'Client Details';
+  // Pure explicit page title without componentId / role guessing
+  const pageTitle = title || componentName || 'Client Details';
 
   // Dropdown states
   const [entities, setEntities] = useState<ClientEntity[]>([]);

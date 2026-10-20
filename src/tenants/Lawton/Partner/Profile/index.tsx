@@ -5,5 +5,5 @@ import { PortalViewProps } from '@/tenants/Common/types';
 import ProfileBaseView from '@/tenants/Common/components/ProfileBaseView';
 
 export default function LawtonPartnerProfile(props: PortalViewProps) {
-  return <ProfileBaseView {...props} />;
+  return <ProfileBaseView {...props} phonePrefix="+66-" defaultRoleName="Broker" />;
 }

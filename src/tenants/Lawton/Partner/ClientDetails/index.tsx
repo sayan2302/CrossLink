@@ -8,8 +8,7 @@ export default function LawtonPartnerClientDetails(props: PortalViewProps) {
   return (
     <ClientMemberDetailsBaseView
       {...props}
-      componentId={props.componentId || 'LawtonPartnerClientDetails'}
-      componentName={props.componentName || 'Client Details'}
+      title="Client Details"
     />
   );
 }

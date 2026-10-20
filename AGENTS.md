@@ -101,18 +101,53 @@ CrossLink MUST NEVER directly call external microservices, IPMI backend services
    - User-facing error messages must remain polite, helpful, and professional.
 3. **Component ID Convention**:
    - Each portal component must use its distinct PascalCase ID (e.g. `MayfairCorporateInsights`, `LawtonPartnerClaimSubmission`).
-   - Component logic follows the **Composable Hybrid Pattern**: shared logic resides in reusable UI primitives, while specialized business rules adapt based on the component ID.
+   - Every module has a dedicated component mapped 1-to-1 in the Component Registry (`src/tenants/registry.ts`).
 
 ---
 
-## 6. Strict Agent Workflow Rules
+## 6. Strict Multi-Tenant Independence & 1-to-1 Mapping Rule
+
+> **CRITICAL ARCHITECTURAL MANDATE (ZERO CONDITIONAL BRANCHING IN VIEWS)**:
+> CrossLink serves multiple tenants (Mayfair, Lawton Asia) and roles (HR, Broker, Insurer) with distinct business workflows, data models, and regulatory requirements. To prevent cross-tenant data leaks, unintended side-effects, and maintenance fragility, all portal views MUST adhere to the **Strict 1-to-1 Mapping and Complete Independence Architecture**.
+
+### Rules of Independence:
+1. **Directory Structure**:
+   All portal-facing module components MUST reside in their dedicated directory matching their tenant and role hierarchy:
+   ```
+   src/tenants/<Tenant>/<Role>/<Module>/index.tsx
+   ```
+   Examples:
+   - `src/tenants/Mayfair/Corporate/DownloadEcards/index.tsx`
+   - `src/tenants/Lawton/Corporate/DownloadEcards/index.tsx`
+   - `src/tenants/Lawton/Partner/ViewClaims/index.tsx`
+   - `src/tenants/Mayfair/Partner/ViewClaims/index.tsx`
+
+2. **Zero Conditional Branching for Tenants or Roles in Views**:
+   - **STRICTLY FORBIDDEN**: Using conditionals such as `isLawton`, `isMayfair`, `portal.portalKey.includes(...)`, `portal.role === '...'`, `user.role === '...'`, or `componentId === '...'` inside view templates, render trees, or business logic to toggle UI elements or API paths.
+   - If Mayfair Corporate needs an Employee Code search and Lawton Corporate needs Entity/Policy dropdowns, they MUST be two separate, independent view files—NEVER a single file with `if (isLawton)` forks.
+
+3. **1-to-1 Component Registry (`src/tenants/registry.ts`)**:
+   - The Component Registry is the single source of truth connecting MongoDB `componentId` strings directly to their dedicated module views.
+   - Dynamic dashboard resolution in `DashboardHost.tsx` MUST use `COMPONENT_REGISTRY[componentId]` directly. No nested ternary ladders or switch statements are allowed in the host page.
+
+4. **Strict Scope of `src/tenants/Common/`**:
+   - `src/tenants/Common/` must ONLY contain tenant-agnostic, pure UI primitives (e.g., `types.ts`, `UnmigratedSpecModal.tsx`).
+   - Reusable primitives used across tenants must be completely pure and accept configuration via explicit props (e.g., `phonePrefix`, `title`, `columns`) rather than inspecting `portalKey` or `role` internally to make assumptions.
+   - NEVER create monolithic "Base" views that bundle multiple tenants' incompatible logic.
+
+---
+
+## 7. Strict Agent Workflow Rules
 
 1. **Sequential Phase Progression**:
    - **Phase 1: Discussion** -> Clarify requirements, architecture, and intent.
    - **Phase 2: Planning** -> Propose structured implementation plan.
    - **Phase 3: Coding** -> ONLY write code after explicit user instruction/approval.
-2. **No Unsolicited Modifications**:
+2. **Preserve 1-to-1 Tenant Independence**:
+   - Any new component or migration MUST be created as an independent module under `src/tenants/<Tenant>/<Role>/<Module>/index.tsx` and registered in `src/tenants/registry.ts`.
+   - Never add multi-tenant or multi-role conditional checks into existing views.
+3. **No Unsolicited Modifications**:
    - Do NOT modify the legacy repository (`mayfairmemberportal`) without explicit instruction.
    - Do NOT create unnecessary scratch scripts in the workspace.
-3. **Mandatory Compliance Tag**:
+4. **Mandatory Compliance Tag**:
    - Include `[workflow agent rules followed]` in every response.

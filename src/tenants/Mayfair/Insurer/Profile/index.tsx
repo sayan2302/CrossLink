@@ -5,5 +5,5 @@ import { PortalViewProps } from '@/tenants/Common/types';
 import ProfileBaseView from '@/tenants/Common/components/ProfileBaseView';
 
 export default function MayfairInsurerProfile(props: PortalViewProps) {
-  return <ProfileBaseView {...props} />;
+  return <ProfileBaseView {...props} phonePrefix="+91-" defaultRoleName="Insurer" />;
 }
