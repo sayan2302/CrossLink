@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getBrokerSessionContext, DX_ADAPTER_URL } from '../../../bff-helper';
+import { getBrokerSessionContext, DX_ADAPTER_URL } from '@/lib/bff';
 
 interface RouteContext {
   params: Promise<{ maid: string }> | { maid: string };

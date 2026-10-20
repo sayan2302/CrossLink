@@ -11,7 +11,25 @@ export const DX_ADAPTER_API_KEY =
   process.env.DX_ADAPTER_API_KEY ||
   'c3105ab330fc90ba6285b852cc5ba1288fd9750fc585d69533719badfafc2c83';
 
-export async function getClaimsSessionContext() {
+export interface BffSessionContext {
+  portalKey: string;
+  tenantId: string;
+  token: string;
+  role: string;
+  user?: any;
+  headers: Record<string, string>;
+}
+
+export type BffSessionResult =
+  | { context: BffSessionContext; error?: never }
+  | { error: NextResponse; context?: never };
+
+/**
+ * Universal BFF session and authorization header injector.
+ * Validates the user session cookie, extracts tenant context, and prepares
+ * verified mediation headers for dx-adapter on port 3001.
+ */
+export async function getBffSessionContext(): Promise<BffSessionResult> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('crosslink_session')?.value;
 
@@ -58,3 +76,10 @@ export async function getClaimsSessionContext() {
     },
   };
 }
+
+// Backward-compatible named aliases for clean migrations
+export const getBrokerSessionContext = getBffSessionContext;
+export const getClaimsSessionContext = getBffSessionContext;
+export const getEcardSessionContext = getBffSessionContext;
+export const getPolicySessionContext = getBffSessionContext;
+export const getProviderSessionContext = getBffSessionContext;

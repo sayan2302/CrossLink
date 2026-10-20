@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getClaimsSessionContext, DX_ADAPTER_URL } from '../bff-helper';
+import { getClaimsSessionContext, DX_ADAPTER_URL } from '@/lib/bff';
 
 export async function GET(request: NextRequest) {
   try {

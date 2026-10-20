@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getBrokerSessionContext, DX_ADAPTER_URL } from '../../bff-helper';
+import { getBrokerSessionContext, DX_ADAPTER_URL } from '@/lib/bff';
 
 export async function GET() {
   try {

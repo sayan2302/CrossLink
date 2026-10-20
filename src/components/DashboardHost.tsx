@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PortalConfig } from '@/config/tenants';
 import { ComponentMeta } from '@/config/components';
 import { getComponentAsset } from '@/config/component-assets';
 import DevPortalSwitcher from './DevPortalSwitcher';
+import TopNavigation from './layout/TopNavigation';
 import { COMPONENT_REGISTRY } from '@/tenants/registry';
 import { UnmigratedSpecModal } from '@/tenants/Common';
 
@@ -114,110 +114,21 @@ export default function DashboardHost({ portal, components, user }: DashboardHos
       }}
     >
       {/* TOP NAVIGATION BAR */}
-      <header
-        style={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          padding: '14px 32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
+      <TopNavigation
+        portal={portal}
+        user={user}
+        onProfileClick={() => {
+          setSelectedComponent({
+            id: `${portal.portalKey}Profile`,
+            name: 'Profile',
+            order: 99,
+            description: 'View and update your personal information and contact details',
+          });
+          window.history.pushState(null, '', '/dashboard?view=profile');
         }}
-      >
-        {/* Left: Brand Identity */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              padding: '4px 16px',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              border: '1px solid #f1f5f9',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            }}
-          >
-            <Image
-              src={portal.logoUrl}
-              alt={portal.logoAlt}
-              width={200}
-              height={60}
-              style={{ objectFit: 'contain', width: 'auto', height: '52px' }}
-              priority
-            />
-          </div>
-        </div>
-
-        {/* Right: User Profile & Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div
-            onClick={() => {
-              setSelectedComponent({
-                id: `${portal.portalKey}Profile`,
-                name: 'Profile',
-                order: 99,
-                description: 'View and update your personal information and contact details',
-              });
-              window.history.pushState(null, '', '/dashboard?view=profile');
-            }}
-            role="button"
-            tabIndex={0}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '6px 14px',
-              borderRadius: '9999px',
-              backgroundColor: '#f1f5f9',
-              border: '1px solid #e2e8f0',
-              cursor: 'pointer',
-              transition: 'background-color 0.15s ease',
-            }}
-          >
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                backgroundColor: portal.accentColor,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '12px',
-                color: '#ffffff',
-              }}
-            >
-              {user.username.slice(0, 2).toUpperCase()}
-            </div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-              {user.username}
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              color: '#dc2626',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: loggingOut ? 'wait' : 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {loggingOut ? 'Signing out...' : 'Sign Out'}
-          </button>
-        </div>
-      </header>
+        onLogout={handleLogout}
+        loggingOut={loggingOut}
+      />
 
       {/* MAIN CONTAINER */}
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '36px 32px 80px' }}>
