@@ -46,7 +46,7 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'การเข้าสู่ระบบล้มเหลว กรุณาตรวจสอบรหัสนายหน้าและรหัสผ่าน (Authentication failed)');
+        setError(data.error || 'Authentication failed. Please check your broker credentials.');
         setLoading(false);
         return;
       }
@@ -281,7 +281,7 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
             </div>
 
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
-              เข้าสู่ระบบตัวแทนและนายหน้า
+              Broker Partner Sign In
             </h2>
             <p style={{ fontSize: '13px', color: '#64748b' }}>
               Lawton Partner & Licensed Broker Sign In
@@ -312,13 +312,13 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
-                รหัสนายหน้า / Broker ID
+                Broker ID / Username
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="ระบุรหัสนายหน้า (e.g. broker_somchai)"
+                placeholder="Enter your broker username"
                 required
                 autoFocus
                 style={{
@@ -347,17 +347,17 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                  รหัสผ่าน / Password
+                  Password
                 </label>
                 <a
                   href="#forgot"
                   onClick={(e) => {
                     e.preventDefault();
-                    toast.info('กรุณาติดต่อฝ่ายประสานงานตัวแทน Lawton Asia โทร +66 2 264 5000', 'ช่วยเหลือรหัสผ่าน');
+                    toast.info('Please contact Lawton Asia partner support at +66 2 264 5000', 'Password Help');
                   }}
                   style={{ fontSize: '12px', color: portal.accentColor, fontWeight: 600, textDecoration: 'none' }}
                 >
-                  ลืมรหัสผ่าน?
+                  Forgot password?
                 </a>
               </div>
               <div style={{ position: 'relative' }}>
@@ -365,7 +365,7 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="ระบุรหัสผ่านของคุณ"
+                  placeholder="Enter your password"
                   required
                   style={{
                     width: '100%',
@@ -404,7 +404,7 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
                     fontWeight: 500,
                   }}
                 >
-                  {showPassword ? 'ซ่อน' : 'แสดง'}
+                  {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
             </div>
@@ -418,7 +418,7 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
                 style={{ accentColor: portal.accentColor, cursor: 'pointer', width: '16px', height: '16px' }}
               />
               <label htmlFor="rememberMe" style={{ fontSize: '13px', color: '#475569', cursor: 'pointer' }}>
-                จดจำข้อมูลผู้ใช้บนอุปกรณ์นี้ (Remember me)
+                Remember me on this device
               </label>
             </div>
 
@@ -446,7 +446,7 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
               onMouseEnter={(e) => (e.currentTarget.style.filter = 'brightness(1.08)')}
               onMouseLeave={(e) => (e.currentTarget.style.filter = 'none')}
             >
-              {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบนายหน้า (Sign In) →'}
+              {loading ? 'Signing in...' : 'Sign In to Partner Portal →'}
             </button>
           </form>
         </div>

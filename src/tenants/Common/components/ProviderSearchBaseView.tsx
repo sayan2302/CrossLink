@@ -917,10 +917,35 @@ export default function SearchMedicalProviderView({
               <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 16px 0' }}>
                 {errorMessage}
               </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => fetchProviders(selectedLocation.lat, selectedLocation.lon, radius)}
+                  disabled={loadingProviders}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    backgroundColor: '#0284c7',
+                    color: '#ffffff',
+                    fontSize: '12.5px',
+                    fontWeight: 650,
+                    border: 'none',
+                    cursor: loadingProviders ? 'not-allowed' : 'pointer',
+                    opacity: loadingProviders ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                  </svg>
+                  {loadingProviders ? 'Searching...' : 'Retry Search'}
+                </button>
                 <button
                   type="button"
                   onClick={() => setRadius(50)}
+                  disabled={loadingProviders}
                   style={{
                     padding: '8px 16px',
                     borderRadius: '8px',
@@ -929,7 +954,8 @@ export default function SearchMedicalProviderView({
                     fontSize: '12.5px',
                     fontWeight: 650,
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: loadingProviders ? 'not-allowed' : 'pointer',
+                    opacity: loadingProviders ? 0.7 : 1,
                   }}
                 >
                   Expand Radius to 50 Km

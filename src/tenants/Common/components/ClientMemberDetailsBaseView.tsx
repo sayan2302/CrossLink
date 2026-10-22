@@ -66,6 +66,8 @@ export interface PolicyInfo {
   policyId?: number;
   insurerId?: number;
   corporateId?: number;
+  showEcard?: boolean;
+  showCOI?: boolean;
 }
 
 export interface BeneficiaryItem {
@@ -359,10 +361,12 @@ export default function ClientDetailsView({
         const params = new URLSearchParams();
         if (selectedCorpId) {
           params.set('corpId', selectedCorpId);
-          const ent = entities.find((e) => String(e.corpId) === String(selectedCorpId));
-          if (ent?.corpName) params.set('corpName', ent.corpName);
         }
-        if (selectedPolNo) params.set('polNo', selectedPolNo);
+        if (selectedPolNo) {
+          params.set('polNo', selectedPolNo);
+          const foundPol = policies.find((p) => p.polNo === selectedPolNo);
+          if (foundPol?.polId) params.set('polId', foundPol.polId);
+        }
         if (selectedPlan) params.set('plan', selectedPlan);
         if (filterName.trim()) params.set('name', filterName.trim());
         if (filterEmail.trim()) params.set('email', filterEmail.trim());
@@ -390,7 +394,7 @@ export default function ClientDetailsView({
         setLoadingTable(false);
       }
     },
-    [selectedCorpId, entities, selectedPolNo, selectedPlan, filterName, filterEmail, filterStaffId, limit, toast]
+    [selectedCorpId, selectedPolNo, policies, selectedPlan, filterName, filterEmail, filterStaffId, limit, toast]
   );
 
   // Handle Reset Filter
@@ -423,9 +427,12 @@ export default function ClientDetailsView({
       const res = await fetch(`/api/broker/client-details/beneficiary/${encodeURIComponent(maid)}`);
       if (res.ok) {
         const json = await res.json();
+        const policyObj = json.policy || {};
+        if (json.showEcard !== undefined) policyObj.showEcard = json.showEcard;
+        if (json.showCOI !== undefined) policyObj.showCOI = json.showCOI;
         setRowDetailData({
           beneficiary: json.data || null,
-          policy: json.policy || null,
+          policy: policyObj,
           beneficiaries: json.beneficiaries || json.dependents || [],
           dependents: json.dependents || [],
         });
@@ -531,49 +538,74 @@ export default function ClientDetailsView({
     setEditLoading(true);
     setFormErrors({});
 
+    // Find active beneficiary item from rowDetailData to guarantee relationship, PIH & dates
+    const matchedItem = rowDetailData.beneficiaries.find((b) => String(b.maid) === String(maid));
+
+    // Base initial values from current card & policy context so the modal is instantly ready
+    const baseInitial = {
+      firstName: matchedItem?.name ? matchedItem.name.split(' ')[0] : '',
+      middleName: '',
+      lastName: matchedItem?.name ? matchedItem.name.split(' ').slice(1).join(' ') : '',
+      insurerNo: '',
+      pihNumber: matchedItem?.pihNumber || '',
+      emailId: '',
+      mobileNumber: '',
+      idType: 'National Id',
+      passportNo: '',
+      dob: '',
+      age: '',
+      gender: '',
+      relation: matchedItem?.relation || '',
+      maritalStatus: '',
+      nationality: '',
+      homeCountry: '',
+      sumAssured: '',
+      area: '',
+      address: '',
+      effectiveDate: rowDetailData.policy?.validityPeriod ? rowDetailData.policy.validityPeriod.split(' To ')[0]?.trim() || '' : '',
+      expiryDate: rowDetailData.policy?.validityPeriod ? rowDetailData.policy.validityPeriod.split(' To ')[1]?.trim() || '' : '',
+    };
+
+    setFormValues(baseInitial);
+    setInitialFormValues(baseInitial);
+
     try {
       const res = await fetch(`/api/broker/client-details/beneficiary/${encodeURIComponent(maid)}`);
       if (res.ok) {
         const json = await res.json();
         const d = json.data || {};
 
-        // Find active beneficiary item from rowDetailData to guarantee relationship & dates
-        const matchedItem = rowDetailData.beneficiaries.find((b) => String(b.maid) === String(maid));
-
         const initial = {
-          firstName: d.first_name || (matchedItem?.name ? matchedItem.name.split(' ')[0] : ''),
-          middleName: d.middle_name || '',
-          lastName: d.last_name || (matchedItem?.name ? matchedItem.name.split(' ').slice(1).join(' ') : ''),
-          insurerNo: d.insurer_id_no || '',
-          pihNumber: d.pih_member_no || matchedItem?.pihNumber || '',
-          emailId: d.email || '',
-          mobileNumber: d.mobile_number || d.phone_no || '',
-          idType: d.id_type || 'National Id',
-          passportNo: d.id_passport_no || '',
-          dob: formatLegacyDate(d.dob) || '',
-          age: d.age ? String(d.age) : '',
-          gender: d.gender ? (d.gender.toLowerCase().startsWith('f') ? 'Female' : 'Male') : '',
-          relation: matchedItem?.relation || d.relationship || '',
-          maritalStatus: d.marital_status || '',
-          nationality: d.nationality || '',
-          homeCountry: d.home_country || '',
-          sumAssured: d.sum_assured !== undefined && d.sum_assured !== null ? String(d.sum_assured) : '',
-          area: d.coverage_area || '',
-          address: d.physical_address || d.address || '',
-          effectiveDate: formatLegacyDate(d.effective_date) || (rowDetailData.policy?.validityPeriod ? rowDetailData.policy.validityPeriod.split(' To ')[0]?.trim() || '' : ''),
-          expiryDate: formatLegacyDate(d.expiry_date) || (rowDetailData.policy?.validityPeriod ? rowDetailData.policy.validityPeriod.split(' To ')[1]?.trim() || '' : ''),
+          firstName: d.first_name || baseInitial.firstName,
+          middleName: d.middle_name || baseInitial.middleName,
+          lastName: d.last_name || baseInitial.lastName,
+          insurerNo: d.insurer_id_no || baseInitial.insurerNo,
+          pihNumber: d.pih_member_no || baseInitial.pihNumber,
+          emailId: d.email || baseInitial.emailId,
+          mobileNumber: d.mobile_number || d.phone_no || baseInitial.mobileNumber,
+          idType: d.id_type || baseInitial.idType,
+          passportNo: d.id_passport_no || baseInitial.passportNo,
+          dob: formatLegacyDate(d.dob) || baseInitial.dob,
+          age: d.age ? String(d.age) : baseInitial.age,
+          gender: d.gender ? (d.gender.toLowerCase().startsWith('f') ? 'Female' : 'Male') : baseInitial.gender,
+          relation: matchedItem?.relation || d.relationship || baseInitial.relation,
+          maritalStatus: d.marital_status || baseInitial.maritalStatus,
+          nationality: d.nationality || baseInitial.nationality,
+          homeCountry: d.home_country || baseInitial.homeCountry,
+          sumAssured: d.sum_assured !== undefined && d.sum_assured !== null ? String(d.sum_assured) : baseInitial.sumAssured,
+          area: d.coverage_area || baseInitial.area,
+          address: d.physical_address || d.address || baseInitial.address,
+          effectiveDate: formatLegacyDate(d.effective_date) || baseInitial.effectiveDate,
+          expiryDate: formatLegacyDate(d.expiry_date) || baseInitial.expiryDate,
         };
 
         setFormValues(initial);
         setInitialFormValues(initial);
       } else {
-        toast.error('Failed to load member details for editing.');
-        setEditModalOpen(false);
+        console.warn('Extended beneficiary record not found in secondary API; using available member data.');
       }
     } catch (err) {
-      console.error('Error opening edit modal:', err);
-      toast.error('Network error loading beneficiary.');
-      setEditModalOpen(false);
+      console.warn('Network issue fetching extended member details; using available member data:', err);
     } finally {
       setEditLoading(false);
     }
@@ -1060,7 +1092,7 @@ export default function ClientDetailsView({
                 <th style={{ width: '44px', padding: '14px 8px 14px 16px', textAlign: 'center' }} aria-label="Toggle row details" />
                 <th style={{ padding: '14px 16px', fontWeight: 700, color: '#1e293b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Insured Name</th>
                 <th style={{ padding: '14px 16px', fontWeight: 700, color: '#1e293b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email ID</th>
-                <th style={{ padding: '14px 16px', fontWeight: 700, color: '#1e293b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>StaffID No</th>
+                <th style={{ padding: '14px 16px', fontWeight: 700, color: '#1e293b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Staff ID</th>
                 <th style={{ padding: '14px 16px', fontWeight: 700, color: '#1e293b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>PIH Member Id</th>
                 <th style={{ padding: '14px 16px', fontWeight: 700, color: '#1e293b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Relationship</th>
                 <th style={{ padding: '14px 16px', fontWeight: 700, color: '#1e293b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Policy Status</th>
@@ -1231,24 +1263,13 @@ export default function ClientDetailsView({
                             </div>
                             <div>
                               <div style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px' }}>{m.name}</div>
-                              <div style={{ fontSize: '11px', color: '#64748b' }}>MAID: {m.maid}</div>
                             </div>
                           </div>
                         </td>
 
                         {/* Email ID */}
                         <td style={{ padding: '14px 16px', color: '#475569', fontSize: '13px' }}>
-                          {m.emailId ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                                <polyline points="22,6 12,13 2,6" />
-                              </svg>
-                              {m.emailId}
-                            </span>
-                          ) : (
-                            <span style={{ color: '#94a3b8' }}>-</span>
-                          )}
+                          {m.emailId || '-'}
                         </td>
 
                         {/* StaffID No */}
@@ -1297,9 +1318,7 @@ export default function ClientDetailsView({
                         <td style={{ padding: '14px 16px', fontSize: '12px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             <span style={{ color: '#0f172a', fontWeight: 500 }}>{m.startDate || '-'}</span>
-                            <span style={{ color: '#64748b', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                              <span style={{ color: '#94a3b8' }}>to</span> {m.endDate || '-'}
-                            </span>
+                            <span style={{ color: '#475569', fontSize: '12px', fontWeight: 500 }}>{m.endDate || '-'}</span>
                           </div>
                         </td>
 
@@ -1579,7 +1598,6 @@ export default function ClientDetailsView({
                                   </div>
                                 </div>
 
-
                                 {/* MEMBER PASSPORT CARDS GRID */}
                                 {rowDetailData.beneficiaries.length === 0 ? (
                                   <div style={{ padding: '36px', textAlign: 'center', color: '#64748b', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #dbeafe' }}>
@@ -1742,7 +1760,7 @@ export default function ClientDetailsView({
                                                   Staff ID
                                                 </div>
                                                 <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', marginTop: '2px' }}>
-                                                  {b.staffId || '-'}
+                                                  {b.staffId || m.staffId || '-'}
                                                 </div>
                                               </div>
                                             </div>
@@ -1758,91 +1776,143 @@ export default function ClientDetailsView({
                                               gap: '10px',
                                             }}
                                           >
-                                            {/* E-Card Button */}
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleViewEcard(b);
-                                              }}
-                                              style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                padding: '7px 12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #bfdbfe',
-                                                backgroundColor: '#eff6ff',
-                                                color: '#1d4ed8',
-                                                fontSize: '11px',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                transition: 'all 0.15s ease',
-                                                boxShadow: '0 1px 2px rgba(29, 78, 216, 0.05)',
-                                              }}
-                                              onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = '#1d4ed8';
-                                                e.currentTarget.style.color = '#ffffff';
-                                                e.currentTarget.style.borderColor = '#1d4ed8';
-                                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(29, 78, 216, 0.25)';
-                                              }}
-                                              onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = '#eff6ff';
-                                                e.currentTarget.style.color = '#1d4ed8';
-                                                e.currentTarget.style.borderColor = '#bfdbfe';
-                                                e.currentTarget.style.boxShadow = '0 1px 2px rgba(29, 78, 216, 0.05)';
-                                              }}
-                                            >
-                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <rect x="2" y="5" width="20" height="14" rx="2" />
-                                                <line x1="2" y1="10" x2="22" y2="10" />
-                                              </svg>
-                                              <span>Download E-Card</span>
-                                            </button>
+                                            {/* E-Card Action */}
+                                            {rowDetailData.policy?.showEcard ? (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleViewEcard(b);
+                                                }}
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  gap: '6px',
+                                                  padding: '7px 12px',
+                                                  borderRadius: '8px',
+                                                  border: '1px solid #bfdbfe',
+                                                  backgroundColor: '#eff6ff',
+                                                  color: '#1d4ed8',
+                                                  fontSize: '11px',
+                                                  fontWeight: 600,
+                                                  cursor: 'pointer',
+                                                  transition: 'all 0.15s ease',
+                                                  boxShadow: '0 1px 2px rgba(29, 78, 216, 0.05)',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                                                  e.currentTarget.style.color = '#ffffff';
+                                                  e.currentTarget.style.borderColor = '#1d4ed8';
+                                                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(29, 78, 216, 0.25)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                  e.currentTarget.style.backgroundColor = '#eff6ff';
+                                                  e.currentTarget.style.color = '#1d4ed8';
+                                                  e.currentTarget.style.borderColor = '#bfdbfe';
+                                                  e.currentTarget.style.boxShadow = '0 1px 2px rgba(29, 78, 216, 0.05)';
+                                                }}
+                                              >
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                                                  <line x1="2" y1="10" x2="22" y2="10" />
+                                                </svg>
+                                                <span>Download E-Card</span>
+                                              </button>
+                                            ) : (
+                                              <div
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  gap: '5px',
+                                                  padding: '7px 10px',
+                                                  borderRadius: '8px',
+                                                  border: '1px dashed #cbd5e1',
+                                                  backgroundColor: '#f8fafc',
+                                                  color: '#64748b',
+                                                  fontSize: '11px',
+                                                  fontWeight: 500,
+                                                }}
+                                                title="E-Card data not found for this policy"
+                                              >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <circle cx="12" cy="12" r="10" />
+                                                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                                </svg>
+                                                <span>E-Card: Data not found</span>
+                                              </div>
+                                            )}
 
-                                            {/* COI Button */}
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleViewCoverage(b);
-                                              }}
-                                              style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                padding: '7px 12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #bae6fd',
-                                                backgroundColor: '#f0f9ff',
-                                                color: '#0284c7',
-                                                fontSize: '11px',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                transition: 'all 0.15s ease',
-                                                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.05)',
-                                              }}
-                                              onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = '#0284c7';
-                                                e.currentTarget.style.color = '#ffffff';
-                                                e.currentTarget.style.borderColor = '#0284c7';
-                                                e.currentTarget.style.boxShadow = '0 2px 6px rgba(2, 132, 199, 0.25)';
-                                              }}
-                                              onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = '#f0f9ff';
-                                                e.currentTarget.style.color = '#0284c7';
-                                                e.currentTarget.style.borderColor = '#bae6fd';
-                                                e.currentTarget.style.boxShadow = '0 1px 2px rgba(2, 132, 199, 0.05)';
-                                              }}
-                                            >
-                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                                <polyline points="14 2 14 8 20 8" />
-                                                <line x1="16" y1="13" x2="8" y2="13" />
-                                                <line x1="16" y1="17" x2="8" y2="17" />
-                                              </svg>
-                                              <span>Download COI</span>
-                                            </button>
+                                            {/* COI Action */}
+                                            {rowDetailData.policy?.showCOI ? (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleViewCoverage(b);
+                                                }}
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  gap: '6px',
+                                                  padding: '7px 12px',
+                                                  borderRadius: '8px',
+                                                  border: '1px solid #bae6fd',
+                                                  backgroundColor: '#f0f9ff',
+                                                  color: '#0284c7',
+                                                  fontSize: '11px',
+                                                  fontWeight: 600,
+                                                  cursor: 'pointer',
+                                                  transition: 'all 0.15s ease',
+                                                  boxShadow: '0 1px 2px rgba(2, 132, 199, 0.05)',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                  e.currentTarget.style.backgroundColor = '#0284c7';
+                                                  e.currentTarget.style.color = '#ffffff';
+                                                  e.currentTarget.style.borderColor = '#0284c7';
+                                                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(2, 132, 199, 0.25)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                  e.currentTarget.style.backgroundColor = '#f0f9ff';
+                                                  e.currentTarget.style.color = '#0284c7';
+                                                  e.currentTarget.style.borderColor = '#bae6fd';
+                                                  e.currentTarget.style.boxShadow = '0 1px 2px rgba(2, 132, 199, 0.05)';
+                                                }}
+                                              >
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                                  <polyline points="14 2 14 8 20 8" />
+                                                  <line x1="16" y1="13" x2="8" y2="13" />
+                                                  <line x1="16" y1="17" x2="8" y2="17" />
+                                                </svg>
+                                                <span>Download COI</span>
+                                              </button>
+                                            ) : (
+                                              <div
+                                                style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  gap: '5px',
+                                                  padding: '7px 10px',
+                                                  borderRadius: '8px',
+                                                  border: '1px dashed #cbd5e1',
+                                                  backgroundColor: '#f8fafc',
+                                                  color: '#64748b',
+                                                  fontSize: '11px',
+                                                  fontWeight: 500,
+                                                }}
+                                                title="Certificate of Insurance data not found for this policy"
+                                              >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                  <circle cx="12" cy="12" r="10" />
+                                                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                                </svg>
+                                                <span>COI: Data not found</span>
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                       );
@@ -2493,53 +2563,24 @@ export default function ClientDetailsView({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {pdfModal.pdfUrl && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const win = window.open(pdfModal.pdfUrl);
-                        win?.print();
-                      }}
-                      style={{
-                        padding: '6px 14px',
-                        borderRadius: '6px',
-                        border: '1px solid #cbd5e1',
-                        backgroundColor: '#ffffff',
-                        color: '#334155',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                      }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 6 2 18 2 18 9" />
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                        <rect x="6" y="14" width="12" height="8" />
-                      </svg>
-                      <span>Print</span>
-                    </button>
-
-                    <a
-                      href={pdfModal.pdfUrl}
-                      download={pdfModal.fileName}
-                      style={{
-                        padding: '6px 14px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        backgroundColor: '#002D62',
-                        color: '#ffffff',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textDecoration: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                      }}
-                    >
+                  <a
+                    href={pdfModal.pdfUrl}
+                    download={pdfModal.fileName}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      backgroundColor: '#002D62',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="7 10 12 15 17 10" />
@@ -2547,7 +2588,6 @@ export default function ClientDetailsView({
                       </svg>
                       <span>Download PDF</span>
                     </a>
-                  </>
                 )}
 
                 <button

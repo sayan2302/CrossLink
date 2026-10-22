@@ -6,16 +6,19 @@ interface RouteContext {
   params: Promise<{ maid: string }> | { maid: string };
 }
 
-export async function GET(request: NextRequest, context: RouteContext) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ maid: string }> | { maid: string } }
+) {
   try {
     const { context: brokerCtx, error } = await getBrokerSessionContext();
     if (error) return error;
 
-    const resolvedParams = await Promise.resolve(context.params);
-    const maid = resolvedParams.maid;
+    const resolvedParams = await Promise.resolve(params);
+    const maid = resolvedParams?.maid;
 
-    if (!maid) {
-      return NextResponse.json({ error: 'Missing beneficiary MAID' }, { status: 400 });
+    if (!maid || maid === 'undefined' || maid === 'null') {
+      return NextResponse.json({ error: 'Missing or invalid beneficiary MAID' }, { status: 400 });
     }
 
     const res = await fetch(`${DX_ADAPTER_URL}/broker/client-details/beneficiary/${encodeURIComponent(maid)}`, {
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       const errData = await res.json().catch(() => null);
       console.warn('[ClientDetails BFF] Error fetching beneficiary:', res.status, errData);
       return NextResponse.json(
-        { error: errData?.message || 'Failed to fetch beneficiary details' },
+        { isSuccess: false, error: errData?.message || 'Failed to fetch beneficiary details' },
         { status: res.status }
       );
     }
@@ -41,16 +44,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 }
 
-export async function POST(request: NextRequest, context: RouteContext) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ maid: string }> | { maid: string } }
+) {
   try {
     const { context: brokerCtx, error } = await getBrokerSessionContext();
     if (error) return error;
 
-    const resolvedParams = await Promise.resolve(context.params);
-    const maid = resolvedParams.maid;
+    const resolvedParams = await Promise.resolve(params);
+    const maid = resolvedParams?.maid;
 
-    if (!maid) {
-      return NextResponse.json({ error: 'Missing beneficiary MAID' }, { status: 400 });
+    if (!maid || maid === 'undefined' || maid === 'null') {
+      return NextResponse.json({ error: 'Missing or invalid beneficiary MAID' }, { status: 400 });
     }
 
     const body = await request.json().catch(() => ({}));
