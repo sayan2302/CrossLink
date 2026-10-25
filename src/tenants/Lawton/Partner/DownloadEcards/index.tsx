@@ -19,17 +19,23 @@ interface EcardPolicy {
 interface EcardMember {
   maid: string;
   name: string;
-  relation?: string;
-  staffId?: string;
-  polNo?: string;
+  firstName?: string;
+  lastName?: string;
+  emailId: string;
+  staffId: string;
+  pihNumber: string;
+  relation: string;
+  policyStatus: string;
+  memberStatus: string;
+  polNo: string;
+  corpName: string;
   policyId?: number;
   insurerId?: number;
   priBenefId?: number;
   benefUserId?: number;
-  policyStatus?: string;
-  entityName?: string;
-  planName?: string;
-  hasEcard?: boolean;
+  isDocumentAvailable?: boolean;
+  isEcardAvailable?: boolean;
+  isCoiAvailable?: boolean;
 }
 
 interface PdfModalState {
@@ -49,7 +55,7 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
   const [selectedPolNo, setSelectedPolNo] = useState<string>('');
   const [selectedPolId, setSelectedPolId] = useState<number | ''>('');
   const [benefName, setBenefName] = useState<string>('');
-  const [activeDocType, setActiveDocType] = useState<'all' | 'ecard' | 'coi'>('all');
+  const [activeDocType, setActiveDocType] = useState<'ecard' | 'coi'>('ecard');
 
   const [loadingEntities, setLoadingEntities] = useState(false);
   const [loadingPolicies, setLoadingPolicies] = useState(false);
@@ -96,6 +102,10 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
     setSelectedPolNo('');
     setSelectedPolId('');
     setPolicies([]);
+    setBenefName('');
+    setHasSearched(false);
+    setMembers([]);
+    setSearchError(null);
 
     if (!cid) return;
 
@@ -119,17 +129,23 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
     setSelectedPolNo(polNoVal);
     const matched = policies.find((p) => p.polNo === polNoVal);
     setSelectedPolId(matched?.polId || '');
+    setBenefName('');
+    setHasSearched(false);
+    setMembers([]);
+    setSearchError(null);
   };
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
+  const executeSearch = async () => {
     if (!selectedCorpId) {
-      toast.warning('Please select a Client Entity.');
+      toast.warning('Please select Entity');
       return;
     }
     if (!selectedPolNo) {
-      toast.warning('Please select a Policy.');
+      toast.warning('Please select a policy.');
+      return;
+    }
+    if (!benefName.trim()) {
+      toast.warning('Please enter Beneficiary Name.');
       return;
     }
 
@@ -143,8 +159,8 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
         corpId: Number(selectedCorpId),
         polId: selectedPolId ? Number(selectedPolId) : undefined,
         polNo: selectedPolNo,
-        benefName: benefName.trim() || undefined,
-        docType: activeDocType,
+        benefName: benefName.trim(),
+        docType: 'all',
       };
 
       const res = await fetch('/api/ecard/search', {
@@ -155,7 +171,7 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
 
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
-        setSearchError(errData?.message || 'No member records found.');
+        setSearchError(errData?.message || 'No details found');
         return;
       }
 
@@ -164,10 +180,10 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
         setMembers(data.members);
       } else {
         setMembers([]);
-        setSearchError(data.message || 'No member records found.');
+        setSearchError(data.message || 'No details found');
       }
     } catch {
-      setSearchError('Unable to complete search. Please verify your connection.');
+      setSearchError('No details found');
     } finally {
       setSearching(false);
     }
@@ -189,7 +205,7 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
   const handleViewEcard = async (member: EcardMember) => {
     setPdfModal({
       isOpen: true,
-      title: `Digital E-Card — ${member.name}`,
+      title: 'Download E-Cards',
       pdfUrl: '',
       fileName: `ecard_${member.maid}.pdf`,
       loading: true,
@@ -229,7 +245,7 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
   const handleViewCoverage = async (member: EcardMember) => {
     setPdfModal({
       isOpen: true,
-      title: `Certificate of Insurance — ${member.name}`,
+      title: 'Download Coverage Document',
       pdfUrl: '',
       fileName: `coi_${member.maid}.pdf`,
       loading: true,
@@ -259,23 +275,44 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
         }));
       } else {
         setPdfModal((prev) => ({ ...prev, isOpen: false, loading: false }));
-        toast.warning(data.message || 'Unable to retrieve COI certificate.');
+        toast.warning(data.message || 'Unable to retrieve Coverage Document.');
       }
     } catch {
       setPdfModal((prev) => ({ ...prev, isOpen: false, loading: false }));
-      toast.error('Network failure retrieving Certificate of Insurance.');
+      toast.error('Network failure retrieving Coverage Document.');
     }
   };
 
-  const selectedEntityObj = entities.find((e) => e.corpId === selectedCorpId);
-
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Breadcrumb */}
+      {/* Breadcrumb matching legacy */}
       <nav style={{ marginBottom: '24px' }}>
-        <ol style={{ display: 'flex', alignItems: 'center', gap: '8px', listStyle: 'none', padding: '12px 18px', backgroundColor: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', margin: 0 }}>
+        <ol
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            listStyle: 'none',
+            padding: '12px 18px',
+            backgroundColor: '#ffffff',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            fontSize: '14px',
+            margin: 0,
+          }}
+        >
           <li>
-            <button onClick={onBack} style={{ background: 'none', border: 'none', color: portal.accentColor, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+            <button
+              onClick={onBack}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: portal.accentColor,
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
               Home
             </button>
           </li>
@@ -286,7 +323,7 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
 
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
           Download E-Cards
         </h1>
         <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px' }}>
@@ -294,20 +331,48 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
         </p>
       </div>
 
-      {/* Filter Matrix */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
-        <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', alignItems: 'flex-end' }}>
+      {/* Filter Matrix matching legacy Site/Views/BrokerHome/DownloadEcardLawton.cshtml */}
+      <div
+        style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
+          border: '1px solid #e2e8f0',
+          padding: '24px',
+          marginBottom: '28px',
+          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '16px',
+            alignItems: 'flex-end',
+          }}
+        >
+          {/* Select Entity */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
-              Select Client Entity <span style={{ color: '#ef4444' }}>*</span>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              Select Entity <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <select
+              id="CorpIds"
               value={selectedCorpId}
               onChange={(e) => handleEntityChange(e.target.value)}
               disabled={loadingEntities}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
+              style={{
+                width: '100%',
+                height: '42px',
+                padding: '0 14px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '13px',
+                color: '#0f172a',
+                backgroundColor: '#ffffff',
+                outline: 'none',
+              }}
             >
-              <option value="">{loadingEntities ? 'Loading entities...' : 'Select Client Entity'}</option>
+              <option value="">{loadingEntities ? 'Loading entities...' : 'Select Entity'}</option>
               {entities.map((ent) => (
                 <option key={ent.corpId} value={ent.corpId}>
                   {ent.corpName}
@@ -316,136 +381,518 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
             </select>
           </div>
 
+          {/* Select Policy */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
               Select Policy <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <select
+              id="ddlPoliciesForCorp"
               value={selectedPolNo}
               onChange={(e) => handlePolicyChange(e.target.value)}
               disabled={!selectedCorpId || loadingPolicies}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
+              style={{
+                width: '100%',
+                height: '42px',
+                padding: '0 14px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '13px',
+                color: '#0f172a',
+                backgroundColor: '#ffffff',
+                outline: 'none',
+              }}
             >
               <option value="">{loadingPolicies ? 'Loading policies...' : 'Select Policy'}</option>
               {policies.map((pol) => (
                 <option key={pol.polNo} value={pol.polNo}>
-                  {pol.polNo} {pol.planName ? `(${pol.planName})` : ''}
+                  {pol.polNo}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Enter Beneficiary Name */}
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
-              Beneficiary Name (Optional)
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+              Enter Beneficiary Name <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
               type="text"
+              id="txtBrokerBenefName"
+              placeholder="Beneficiary Name"
               value={benefName}
               onChange={(e) => setBenefName(e.target.value)}
-              placeholder="e.g. Somchai"
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff', boxSizing: 'border-box' }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  executeSearch();
+                }
+              }}
+              style={{
+                width: '100%',
+                height: '42px',
+                padding: '0 14px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '13px',
+                color: '#0f172a',
+                backgroundColor: '#ffffff',
+                boxSizing: 'border-box',
+                outline: 'none',
+              }}
             />
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
-              Document Type
-            </label>
-            <select
-              value={activeDocType}
-              onChange={(e) => setActiveDocType(e.target.value as any)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
-            >
-              <option value="all">All Documents</option>
-              <option value="ecard">E-Card Only</option>
-              <option value="coi">Certificate (COI) Only</option>
-            </select>
-          </div>
-
-          <div>
+          {/* Single Unified Search Button */}
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button
-              type="submit"
+              type="button"
+              id="btnLawtonUnifiedSearch"
+              onClick={executeSearch}
               disabled={searching}
-              style={{ width: '100%', height: '42px', borderRadius: '8px', backgroundColor: portal.accentColor, color: '#ffffff', border: 'none', fontWeight: 700, fontSize: '13px', cursor: searching ? 'wait' : 'pointer' }}
+              className={searching ? 'crosslink-btn-loading' : ''}
+              style={{
+                width: '100%',
+                height: '42px',
+                padding: '0 24px',
+                borderRadius: '8px',
+                backgroundColor: portal.accentColor,
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: searching ? 'wait' : 'pointer',
+                boxShadow: searching
+                  ? `0 0 0 4px ${portal.accentColor}28, 0 4px 14px ${portal.accentColor}40`
+                  : '0 1px 2px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                if (!searching) (e.currentTarget as HTMLElement).style.opacity = '0.92';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = '1';
+              }}
             >
-              {searching ? 'Searching...' : 'Search Records'}
+              {searching ? (
+                <>
+                  <svg
+                    className="crosslink-spinner"
+                    style={{ height: '16px', width: '16px' }}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.28)" strokeWidth="3.5" />
+                    <path
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeDasharray="50"
+                      strokeDashoffset="35"
+                      d="M12 2a10 10 0 0 1 10 10"
+                    />
+                  </svg>
+                  <span>Searching</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <span>Search</span>
+                </>
+              )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
 
-      {/* Results Table */}
+      {/* Results Table matching legacy BuildEcardBenefTableHtml */}
       {hasSearched && (
-        <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)', marginBottom: '32px' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#1e293b', borderBottom: '1px solid #0f172a' }}>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', width: '50px' }}>No.</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Entity</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Policy No</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Member Name</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Staff ID</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', textAlign: 'center' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.length > 0 ? (
-                  members.map((m, idx) => (
-                    <tr key={m.maid || idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '14px 16px', color: '#64748b' }}>{idx + 1}</td>
-                      <td style={{ padding: '14px 16px', fontWeight: 600, color: '#0f172a' }}>{selectedEntityObj?.corpName || m.entityName || '--'}</td>
-                      <td style={{ padding: '14px 16px', color: '#334155', fontWeight: 500 }}>{m.polNo || selectedPolNo}</td>
-                      <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{m.name}</td>
-                      <td style={{ padding: '14px 16px', color: '#64748b' }}>{m.staffId || '--'}</td>
-                      <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', gap: '8px' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleViewEcard(m)}
-                            style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: '#059669', color: '#ffffff', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-                          >
-                            eCard
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleViewCoverage(m)}
-                            style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: portal.accentColor, color: '#ffffff', fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer' }}
-                          >
-                            COI
-                          </button>
+        <div
+          id="divEcardBenefDetails"
+          style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '14px',
+            overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+            marginBottom: '32px',
+          }}
+        >
+          {searching ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table
+                id="tblEcardBenefSkeleton"
+                style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      Insured Name
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      Email ID
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      PIH Member Id
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      Relationship
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155', minWidth: '180px' }}>
+                      Documents
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((rowIdx) => (
+                    <tr
+                      key={`ecard-skeleton-row-${rowIdx}`}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        backgroundColor: rowIdx % 2 === 0 ? '#ffffff' : '#fafafa',
+                      }}
+                    >
+                      <td style={{ padding: '14px 18px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{
+                            width: rowIdx % 2 === 0 ? '160px' : '130px',
+                            height: '16px',
+                            borderRadius: '4px',
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{
+                            width: rowIdx % 2 === 0 ? '200px' : '170px',
+                            height: '14px',
+                            borderRadius: '4px',
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{
+                            width: '110px',
+                            height: '14px',
+                            borderRadius: '4px',
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{
+                            width: '70px',
+                            height: '14px',
+                            borderRadius: '4px',
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <div
+                            className="crosslink-skeleton"
+                            style={{
+                              width: '64px',
+                              height: '26px',
+                              borderRadius: '5px',
+                            }}
+                          />
+                          <div
+                            className="crosslink-skeleton"
+                            style={{
+                              width: '54px',
+                              height: '26px',
+                              borderRadius: '5px',
+                            }}
+                          />
                         </div>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} style={{ padding: '48px 24px', textAlign: 'center', color: '#64748b' }}>
-                      {searchError || 'No records found matching your selection.'}
-                    </td>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : members.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table
+                id="tblEcardBenefList"
+                style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      Insured Name
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      Email ID
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      PIH Member Id
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                      Relationship
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 700, color: '#334155', minWidth: '180px' }}>
+                      Documents
+                    </th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {members.map((benef, idx) => {
+                    return (
+                      <tr key={benef.maid || idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '14px 18px', fontWeight: 700, color: '#0f172a' }}>
+                          {benef.name}
+                        </td>
+                        <td style={{ padding: '14px 18px', color: '#475569' }}>
+                          {benef.emailId || ''}
+                        </td>
+                        <td style={{ padding: '14px 18px', color: '#475569' }}>
+                          {benef.pihNumber || ''}
+                        </td>
+                        <td style={{ padding: '14px 18px', color: '#475569' }}>
+                          {benef.relation || ''}
+                        </td>
+                        <td style={{ padding: '14px 18px' }} className="ecard-view-cell">
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            {benef.isEcardAvailable ? (
+                              <button
+                                type="button"
+                                className="btn label label-success btn-ecard-doc"
+                                onClick={() => handleViewEcard(benef)}
+                                style={{
+                                  padding: '5px 12px',
+                                  borderRadius: '5px',
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 1px 2px rgba(16, 185, 129, 0.2)',
+                                  transition: 'opacity 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.9')}
+                                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+                              >
+                                E-Card
+                              </button>
+                            ) : (
+                              <span
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  backgroundColor: '#f1f5f9',
+                                  color: '#94a3b8',
+                                  fontSize: '11px',
+                                  fontWeight: 500,
+                                  border: '1px solid #e2e8f0',
+                                }}
+                              >
+                                No E-Card
+                              </span>
+                            )}
+
+                            {benef.isCoiAvailable ? (
+                              <button
+                                type="button"
+                                className="btn label label-primary btn-coi-doc"
+                                onClick={() => handleViewCoverage(benef)}
+                                style={{
+                                  padding: '5px 12px',
+                                  borderRadius: '5px',
+                                  backgroundColor: '#0284c7',
+                                  color: '#ffffff',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 1px 2px rgba(2, 132, 199, 0.2)',
+                                  transition: 'opacity 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = '0.9')}
+                                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+                              >
+                                COI
+                              </button>
+                            ) : (
+                              <span
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  backgroundColor: '#f1f5f9',
+                                  color: '#94a3b8',
+                                  fontSize: '11px',
+                                  fontWeight: 500,
+                                  border: '1px solid #e2e8f0',
+                                }}
+                              >
+                                No COI
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div
+              className="alert alert-danger"
+              style={{
+                padding: '24px',
+                textAlign: 'center',
+                backgroundColor: '#fef2f2',
+                color: '#991b1b',
+                fontSize: '14px',
+                fontWeight: 600,
+                border: '1px solid #fee2e2',
+                borderRadius: '14px',
+              }}
+            >
+              {searchError || 'No details found'}
+            </div>
+          )}
         </div>
       )}
 
-      {/* PDF Modal */}
+      {/* PDF Modal matching legacy ecardModal / coverageModal */}
       {pdfModal.isOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', maxWidth: '850px', width: '100%', height: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>{pdfModal.title}</h3>
-              <button onClick={() => setPdfModal((prev) => ({ ...prev, isOpen: false }))} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#64748b', cursor: 'pointer' }}>✕</button>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '850px',
+              width: '100%',
+              height: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '16px 24px',
+                borderBottom: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <h5 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                {pdfModal.title}
+              </h5>
+              <button
+                type="button"
+                onClick={() => setPdfModal((prev) => ({ ...prev, isOpen: false }))}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                }}
+              >
+                ✕
+              </button>
             </div>
+
+            {/* Modal Body with iframe */}
             <div style={{ flex: 1, backgroundColor: '#f1f5f9' }}>
               {pdfModal.loading ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>Loading document preview...</div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    color: '#64748b',
+                    fontSize: '14px',
+                  }}
+                >
+                  Loading document preview...
+                </div>
               ) : (
-                <iframe src={pdfModal.pdfUrl} style={{ width: '100%', height: '100%', border: 'none' }} title="Document Preview" />
+                <iframe
+                  src={pdfModal.pdfUrl}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 'none' }}
+                  title={pdfModal.title}
+                />
               )}
+            </div>
+
+            {/* Modal Footer with Close button */}
+            <div
+              style={{
+                padding: '14px 24px',
+                borderTop: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                backgroundColor: '#ffffff',
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => setPdfModal((prev) => ({ ...prev, isOpen: false }))}
+                style={{
+                  padding: '7px 18px',
+                  borderRadius: '6px',
+                  backgroundColor: portal.accentColor,
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

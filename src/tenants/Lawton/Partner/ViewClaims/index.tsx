@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { PortalViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
+import { formatDisplayDate } from '@/lib/date';
+import { formatCurrency } from '@/lib/formatters';
 
 interface CorporateEntity {
   corpId: number;
@@ -17,34 +19,42 @@ interface PolicyItem {
 }
 
 interface ClaimRecord {
-  claimRefNo: string;
-  claimId?: string;
-  claimNo?: string;
-  insuredName: string;
+  claimId: string;
+  claimReferenceNo: string;
+  actualClaimId?: number;
   firstName?: string;
   lastName?: string;
-  polNo: string;
-  corpName?: string;
+  beneficiaryName: string;
+  employeeId?: string;
+  policyNumber: string;
   claimType: string;
   treatmentDate: string;
-  claimedAmount: number | string;
-  approvedAmount: number | string;
-  status: string;
-  staffId?: string;
+  dateOfDischarge?: string;
+  claimedAmount: number;
+  approvedAmount: number;
   currency?: string;
+  status: string;
+  isPastClaim?: boolean;
+}
+
+interface ClaimAuditItem {
+  status: string;
+  date: string;
 }
 
 interface ClaimDetails {
-  claimRefNo: string;
-  diagnosis?: string;
-  treatmentType?: string;
-  hospitalName?: string;
-  dischargeDate?: string;
-  deductible?: number;
-  coPay?: number;
-  deniedReason?: string;
-  settledDate?: string;
-  notes?: string;
+  claimReferenceNo: string;
+  claimNumber: string;
+  beneficiaryName: string;
+  policyNumber: string;
+  claimType: string;
+  dateOfAdmission: string;
+  dateOfDischarge: string;
+  claimedAmount: number;
+  payableAmount: number;
+  currency?: string;
+  currentStatus: string;
+  auditTrail: ClaimAuditItem[];
 }
 
 export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewProps) {
@@ -123,17 +133,22 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
     setCurrentPage(1);
 
     try {
-      const queryParams = new URLSearchParams();
-      if (selectedCorpId) queryParams.set('corpId', selectedCorpId);
-      if (selectedPolNo) queryParams.set('polNo', selectedPolNo);
-      if (claimType) queryParams.set('claimType', claimType);
-      if (empName.trim()) queryParams.set('empName', empName.trim());
-      if (empCode.trim()) queryParams.set('empCode', empCode.trim());
-      if (claimNo.trim()) queryParams.set('claimNo', claimNo.trim());
+      const res = await fetch('/api/claims/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          corpId: selectedCorpId ? Number(selectedCorpId) : undefined,
+          polNo: selectedPolNo || undefined,
+          claimType,
+          empName: empName.trim() || undefined,
+          empCode: empCode.trim() || undefined,
+          claimNo: claimNo.trim() || undefined,
+        }),
+      });
 
-      const res = await fetch(`/api/claims/search?${queryParams.toString()}`);
       if (!res.ok) {
-        setErrorMessage('Failed to fetch claims.');
+        const errData = await res.json().catch(() => null);
+        setErrorMessage(errData?.message || 'Failed to fetch claims.');
         setClaims([]);
         return;
       }
@@ -141,9 +156,12 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
       const data = await res.json();
       if (data.isSuccess && Array.isArray(data.claims)) {
         setClaims(data.claims);
+        if (data.claims.length === 0) {
+          setErrorMessage(data.message || 'No claims found matching your query criteria.');
+        }
       } else {
         setClaims([]);
-        setErrorMessage(data.message || 'No claims found.');
+        setErrorMessage(data.message || 'No claims found matching your query criteria.');
       }
     } catch {
       setErrorMessage('Network error executing claims search.');
@@ -173,6 +191,10 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
         setLoadingClaimDetailRef(null);
       }
     }
+  };
+
+  const closeAllClaims = () => {
+    setExpandedClaimRef(null);
   };
 
   const totalPages = Math.ceil(claims.length / pageSize) || 1;
@@ -287,17 +309,102 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
             <button
               onClick={executeSearch}
               disabled={searching}
-              style={{ width: '100%', height: '42px', borderRadius: '8px', backgroundColor: portal.accentColor, color: '#ffffff', border: 'none', fontWeight: 700, fontSize: '13px', cursor: searching ? 'wait' : 'pointer' }}
+              className={searching ? 'crosslink-btn-loading' : ''}
+              style={{
+                width: '100%',
+                height: '42px',
+                borderRadius: '8px',
+                backgroundColor: portal.accentColor,
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: searching ? 'wait' : 'pointer',
+                boxShadow: searching
+                  ? `0 0 0 4px ${portal.accentColor}28, 0 4px 14px ${portal.accentColor}40`
+                  : '0 1px 2px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
             >
-              {searching ? 'Searching...' : 'Search Claims'}
+              {searching ? (
+                <>
+                  <svg
+                    className="crosslink-spinner"
+                    style={{ height: '16px', width: '16px' }}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.28)" strokeWidth="3.5" />
+                    <path
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeDasharray="50"
+                      strokeDashoffset="35"
+                      d="M12 2a10 10 0 0 1 10 10"
+                    />
+                  </svg>
+                  <span>Searching</span>
+                </>
+              ) : (
+                'Search Claims'
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Results Table */}
+      {/* Results Section */}
       {hasSearched && (
         <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)', marginBottom: '32px' }}>
+          {/* Action Bar matching legacy _ClaimListBroker.cshtml */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', backgroundColor: '#f8fafc' }}>
+            <div style={{ fontSize: '13px', fontWeight: 650, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a90c4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              {searching ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>Searching claims</span>
+                  <div className="crosslink-skeleton" style={{ width: '60px', height: '14px', borderRadius: '4px' }} />
+                </div>
+              ) : (
+                <span>Total Claims: <strong style={{ color: '#0f172a' }}>{claims.length}</strong></span>
+              )}
+            </div>
+            {!searching && expandedClaimRef && (
+              <button
+                type="button"
+                onClick={closeAllClaims}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 1px 2px rgba(239, 68, 68, 0.2)',
+                }}
+              >
+                <span>✕</span> Close All Claims
+              </button>
+            )}
+          </div>
+
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
@@ -307,58 +414,227 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
                   <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Last Name</th>
                   <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Policy Number</th>
                   <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Claim ID</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Type</th>
+                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Type of Claim</th>
                   <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Treatment Date</th>
                   <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', textAlign: 'right' }}>Claimed Amount</th>
                   <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', textAlign: 'right' }}>Approved Amount</th>
+                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', textAlign: 'center', width: '80px' }}>View</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedClaims.length > 0 ? (
+                {searching ? (
+                  Array.from({ length: 6 }).map((_, idx) => (
+                    <tr
+                      key={`claim-skel-${idx}`}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        backgroundColor: idx % 2 === 0 ? '#ffffff' : '#fafafa',
+                      }}
+                    >
+                      <td style={{ padding: '14px 8px 14px 16px', textAlign: 'center' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: '12px', height: '12px', borderRadius: '3px', margin: '0 auto' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: idx % 2 === 0 ? '90px' : '75px', height: '14px', borderRadius: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: idx % 2 === 0 ? '110px' : '95px', height: '14px', borderRadius: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: idx % 2 === 0 ? '130px' : '115px', height: '14px', borderRadius: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: '160px', height: '14px', borderRadius: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: '70px', height: '14px', borderRadius: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: '85px', height: '14px', borderRadius: '4px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: '65px', height: '14px', borderRadius: '4px', marginLeft: 'auto' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: '65px', height: '14px', borderRadius: '4px', marginLeft: 'auto' }}
+                        />
+                      </td>
+                      <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                        <div
+                          className="crosslink-skeleton"
+                          style={{ width: '48px', height: '22px', borderRadius: '4px', margin: '0 auto' }}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                ) : paginatedClaims.length > 0 ? (
                   paginatedClaims.map((c) => {
-                    const isExpanded = expandedClaimRef === c.claimRefNo;
-                    const detail = claimDetailsCache[c.claimRefNo];
+                    const isExpanded = expandedClaimRef === c.claimReferenceNo;
+                    const detail = claimDetailsCache[c.claimReferenceNo];
+                    const firstName = c.firstName || c.beneficiaryName?.split(' ')[0] || '--';
+                    const lastName = c.lastName || c.beneficiaryName?.split(' ').slice(1).join(' ') || '--';
+                    const displayClaimId = c.claimId || c.claimReferenceNo || '--';
+
                     return (
-                      <React.Fragment key={c.claimRefNo}>
+                      <React.Fragment key={c.claimReferenceNo}>
                         <tr
-                          onClick={() => toggleAccordion(c.claimRefNo)}
-                          style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: isExpanded ? '#f8fafc' : '#ffffff' }}
+                          onClick={() => toggleAccordion(c.claimReferenceNo)}
+                          style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: isExpanded ? '#f8fafc' : '#ffffff', transition: 'background-color 0.15s ease' }}
                         >
                           <td style={{ padding: '14px 8px 14px 16px', textAlign: 'center', color: '#64748b' }}>
                             {isExpanded ? '▼' : '▶'}
                           </td>
-                          <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{c.firstName || c.insuredName.split(' ')[0] || '--'}</td>
-                          <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{c.lastName || c.insuredName.split(' ').slice(1).join(' ') || '--'}</td>
-                          <td style={{ padding: '14px 16px', color: '#334155' }}>{c.polNo}</td>
-                          <td style={{ padding: '14px 16px', fontWeight: 600, color: portal.accentColor }}>{c.claimId || c.claimNo || c.claimRefNo}</td>
+                          <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{firstName}</td>
+                          <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{lastName}</td>
+                          <td style={{ padding: '14px 16px', color: '#334155' }}>{c.policyNumber || '--'}</td>
+                          <td style={{ padding: '14px 16px', fontWeight: 600, color: portal.accentColor }}>{displayClaimId}</td>
                           <td style={{ padding: '14px 16px', color: '#64748b' }}>{c.claimType || 'Outpatient'}</td>
-                          <td style={{ padding: '14px 16px', color: '#64748b' }}>{c.treatmentDate || '--'}</td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>THB {Number(c.claimedAmount || 0).toLocaleString()}</td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>THB {Number(c.approvedAmount || 0).toLocaleString()}</td>
+                          <td style={{ padding: '14px 16px', color: '#64748b' }}>{formatDisplayDate(c.treatmentDate, '--')}</td>
+                          <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
+                            {c.claimedAmount > 0 ? formatCurrency(c.claimedAmount) : '--'}
+                          </td>
+                          <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
+                            {c.approvedAmount > 0 ? formatCurrency(c.approvedAmount) : '--'}
+                          </td>
+                          <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                padding: '4px 10px',
+                                borderRadius: '4px',
+                                backgroundColor: '#10b981',
+                                color: '#ffffff',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                              }}
+                            >
+                              View
+                            </span>
+                          </td>
                         </tr>
 
+                        {/* Accordion Detail Row matching legacy _LawtonClaimDetail.cshtml */}
                         {isExpanded && (
-                          <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                            <td colSpan={9} style={{ padding: '16px 24px' }}>
-                              {loadingClaimDetailRef === c.claimRefNo ? (
-                                <div style={{ color: '#64748b' }}>Loading claim breakdown...</div>
+                          <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                            <td colSpan={10} style={{ padding: '20px 24px' }}>
+                              {loadingClaimDetailRef === c.claimReferenceNo ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
+                                  <svg className="crosslink-spinner" style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" stroke="#cbd5e1" strokeWidth="3" fill="none" />
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke={portal.accentColor} strokeWidth="3" strokeLinecap="round" fill="none" />
+                                  </svg>
+                                  Loading claim activity and details...
+                                </div>
                               ) : detail ? (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '12px' }}>
-                                  <div>
-                                    <span style={{ color: '#94a3b8', display: 'block' }}>Hospital / Provider</span>
-                                    <strong style={{ color: '#0f172a' }}>{detail.hospitalName || 'Network Provider'}</strong>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                  {/* Panel 1: Claim Activity */}
+                                  <div style={{ borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                                    <div style={{ backgroundColor: '#4a90c4', color: '#ffffff', padding: '8px 16px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span>📄</span> Claim Activity
+                                    </div>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                                      <thead>
+                                        <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155', borderRight: '1px solid #cbd5e1' }}>Status</th>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155' }}>Date</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {detail.auditTrail && detail.auditTrail.length > 0 ? (
+                                          detail.auditTrail.map((audit, aIdx) => (
+                                            <tr key={aIdx} style={{ borderBottom: aIdx < detail.auditTrail.length - 1 ? '1px solid #cbd5e1' : 'none', backgroundColor: '#ffffff' }}>
+                                              <td style={{ padding: '8px 14px', fontWeight: 650, color: '#0284c7', borderRight: '1px solid #cbd5e1' }}>
+                                                {audit.status || '--'}
+                                              </td>
+                                              <td style={{ padding: '8px 14px', color: '#334155' }}>
+                                                {formatDisplayDate(audit.date, '--')}
+                                              </td>
+                                            </tr>
+                                          ))
+                                        ) : (
+                                          <tr>
+                                            <td colSpan={2} style={{ padding: '12px 14px', textAlign: 'center', color: '#64748b' }}>
+                                              No status history available
+                                            </td>
+                                          </tr>
+                                        )}
+                                      </tbody>
+                                    </table>
                                   </div>
-                                  <div>
-                                    <span style={{ color: '#94a3b8', display: 'block' }}>Diagnosis</span>
-                                    <strong style={{ color: '#0f172a' }}>{detail.diagnosis || 'Standard Consultation'}</strong>
-                                  </div>
-                                  <div>
-                                    <span style={{ color: '#94a3b8', display: 'block' }}>Settlement Date</span>
-                                    <strong style={{ color: '#0f172a' }}>{detail.settledDate || '--'}</strong>
+
+                                  {/* Panel 2: Details */}
+                                  <div style={{ borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                                    <div style={{ backgroundColor: '#4a90c4', color: '#ffffff', padding: '8px 16px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span>➕</span> Details
+                                    </div>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', backgroundColor: '#ffffff' }}>
+                                      <tbody>
+                                        <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155', backgroundColor: '#f1f5f9', borderRight: '1px solid #cbd5e1' }}>
+                                            Date Of Admission
+                                          </th>
+                                          <td style={{ padding: '8px 14px', color: '#0f172a' }}>
+                                            {formatDisplayDate(detail.dateOfAdmission, '--')}
+                                          </td>
+                                        </tr>
+                                        <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155', backgroundColor: '#f1f5f9', borderRight: '1px solid #cbd5e1' }}>
+                                            Date Of Discharge
+                                          </th>
+                                          <td style={{ padding: '8px 14px', color: '#0f172a' }}>
+                                            {formatDisplayDate(detail.dateOfDischarge, '--')}
+                                          </td>
+                                        </tr>
+                                        <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155', backgroundColor: '#f1f5f9', borderRight: '1px solid #cbd5e1' }}>
+                                            Total Claimed
+                                          </th>
+                                          <td style={{ padding: '8px 14px', fontWeight: 650, color: '#0f172a' }}>
+                                            {detail.claimedAmount > 0 ? formatCurrency(detail.claimedAmount) : '--'}
+                                          </td>
+                                        </tr>
+                                        <tr>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155', backgroundColor: '#f1f5f9', borderRight: '1px solid #cbd5e1' }}>
+                                            Total Payable
+                                          </th>
+                                          <td style={{ padding: '8px 14px', fontWeight: 650, color: detail.payableAmount > 0 ? '#059669' : '#0f172a' }}>
+                                            {detail.payableAmount > 0 ? formatCurrency(detail.payableAmount) : '--'}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
                                   </div>
                                 </div>
                               ) : (
-                                <div style={{ color: '#64748b' }}>Standard claims adjudication details.</div>
+                                <div style={{ color: '#ef4444', fontSize: '13px' }}>
+                                  Could not load claim details.
+                                </div>
                               )}
                             </td>
                           </tr>
@@ -368,8 +644,8 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
                   })
                 ) : (
                   <tr>
-                    <td colSpan={9} style={{ padding: '48px 24px', textAlign: 'center', color: '#64748b' }}>
-                      {errorMessage || 'No claims records found matching your query.'}
+                    <td colSpan={10} style={{ padding: '48px 24px', textAlign: 'center', color: '#64748b' }}>
+                      {errorMessage || 'No claims records found matching your query criteria.'}
                     </td>
                   </tr>
                 )}
@@ -378,7 +654,7 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
           </div>
 
           {/* Pagination */}
-          {claims.length > pageSize && (
+          {!searching && claims.length > pageSize && (
             <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', color: '#64748b' }}>
                 Page {currentPage} of {totalPages} ({claims.length} records)

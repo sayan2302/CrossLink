@@ -139,9 +139,51 @@ export default function MayfairCorporateTrackClaims({ portal, onBack }: PortalVi
             <button
               onClick={executeSearch}
               disabled={searching}
-              style={{ width: '100%', height: '42px', borderRadius: '8px', backgroundColor: portal.accentColor, color: '#ffffff', border: 'none', fontWeight: 700, fontSize: '13px', cursor: searching ? 'wait' : 'pointer' }}
+              className={searching ? 'crosslink-btn-loading' : ''}
+              style={{
+                width: '100%',
+                height: '42px',
+                borderRadius: '8px',
+                backgroundColor: portal.accentColor,
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: searching ? 'wait' : 'pointer',
+                boxShadow: searching
+                  ? `0 0 0 4px ${portal.accentColor}28, 0 4px 14px ${portal.accentColor}40`
+                  : '0 1px 2px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
             >
-              {searching ? 'Searching...' : 'Track Claims'}
+              {searching ? (
+                <>
+                  <svg
+                    className="crosslink-spinner"
+                    style={{ height: '16px', width: '16px' }}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.28)" strokeWidth="3.5" />
+                    <path
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeDasharray="50"
+                      strokeDashoffset="35"
+                      d="M12 2a10 10 0 0 1 10 10"
+                    />
+                  </svg>
+                  <span>Searching</span>
+                </>
+              ) : (
+                'Track Claims'
+              )}
             </button>
           </div>
         </div>

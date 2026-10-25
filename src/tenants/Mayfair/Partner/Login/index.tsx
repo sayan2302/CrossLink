@@ -443,10 +443,34 @@ export default function MayfairPartnerLogin({ portal }: LoginViewProps) {
                 transition: 'all 0.2s ease',
                 marginTop: '8px',
               }}
+              className={loading ? 'crosslink-btn-loading' : ''}
               onMouseEnter={(e) => (e.currentTarget.style.filter = 'brightness(1.08)')}
               onMouseLeave={(e) => (e.currentTarget.style.filter = 'none')}
             >
-              {loading ? 'Authenticating...' : 'Sign in to Partner Dashboard →'}
+              {loading ? (
+                <>
+                  <svg
+                    className="crosslink-spinner"
+                    style={{ height: '16px', width: '16px' }}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.28)" strokeWidth="3.5" />
+                    <path
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeDasharray="50"
+                      strokeDashoffset="35"
+                      d="M12 2a10 10 0 0 1 10 10"
+                    />
+                  </svg>
+                  <span>Authenticating</span>
+                </>
+              ) : (
+                'Sign in to Partner Dashboard →'
+              )}
             </button>
           </form>
         </div>
