@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { PortalConfig } from '@/config/tenants';
+import { CustomInput, CustomSelect } from '@/tenants/Common/ui';
 
 interface UserSession {
   username: string;
@@ -62,6 +64,7 @@ export default function PolicyListView({
   title,
   onBack,
 }: PolicyListViewProps) {
+  const router = useRouter();
   // Pure explicit Page Title without if/else component checks
   const pageTitle = title || 'Policy Management Dashboard';
 
@@ -74,7 +77,7 @@ export default function PolicyListView({
   // Search & Filter Controls
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRED' | 'FUTURE'>('ALL');
-  const [sortBy, setSortBy] = useState<'EXPIRY' | 'POLICY_NO' | 'PLAN_NAME'>('EXPIRY');
+  const [sortBy, setSortBy] = useState<'DEFAULT' | 'EXPIRY' | 'POLICY_NO' | 'PLAN_NAME'>('DEFAULT');
 
   // Expanded Card Drawers: { [policyId: number]: 'DOCS' | 'BENEF' | null }
   const [expandedCards, setExpandedCards] = useState<{ [policyId: number]: 'DOCS' | 'BENEF' | null }>({});
@@ -265,6 +268,9 @@ export default function PolicyListView({
 
     // Sort
     result.sort((a, b) => {
+      if (sortBy === 'DEFAULT') {
+        return a.policyId - b.policyId;
+      }
       if (sortBy === 'EXPIRY') {
         return (b.endDateMs || 0) - (a.endDateMs || 0);
       }
@@ -358,79 +364,55 @@ export default function PolicyListView({
         }}
       >
         {/* Left: Search input */}
-        <div style={{ flex: '1 1 280px', position: 'relative' }}>
-          <div style={{ position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </div>
-          <input
+        <div style={{ flex: '1 1 280px' }}>
+          <CustomInput
             type="text"
             placeholder="Search by policy number, plan name, or corporate..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              height: '38px',
-              paddingLeft: '38px',
-              paddingRight: '14px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              fontSize: '13.5px',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            clearable
+            onClear={() => setSearchQuery('')}
+            accentColor={portal.accentColor}
+            leadingIcon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            }
           />
         </div>
 
         {/* Right: Controls & Filters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            style={{
-              height: '38px',
-              padding: '0 12px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              fontSize: '13px',
-              backgroundColor: '#ffffff',
-              color: '#334155',
-              fontWeight: 500,
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active Policies</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="FUTURE">Future Inception</option>
-          </select>
+          <div style={{ minWidth: '170px' }}>
+            <CustomSelect
+              value={statusFilter}
+              onChange={(val) => setStatusFilter(val as any)}
+              options={[
+                { value: 'ALL', label: 'All Statuses' },
+                { value: 'ACTIVE', label: 'Active Policies' },
+                { value: 'EXPIRED', label: 'Expired' },
+                { value: 'FUTURE', label: 'Future Inception' },
+              ]}
+              accentColor={portal.accentColor}
+            />
+          </div>
 
           {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            style={{
-              height: '38px',
-              padding: '0 12px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              fontSize: '13px',
-              backgroundColor: '#ffffff',
-              color: '#334155',
-              fontWeight: 500,
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="EXPIRY">Sort by Expiry Date</option>
-            <option value="POLICY_NO">Sort by Policy Number</option>
-            <option value="PLAN_NAME">Sort by Corporate / Plan Name</option>
-          </select>
-
+          <div style={{ minWidth: '200px' }}>
+            <CustomSelect
+              value={sortBy}
+              onChange={(val) => setSortBy(val as any)}
+              options={[
+                { value: 'DEFAULT', label: 'Default Order' },
+                { value: 'EXPIRY', label: 'Sort by Expiry Date' },
+                { value: 'POLICY_NO', label: 'Sort by Policy Number' },
+                { value: 'PLAN_NAME', label: 'Sort by Corporate / Plan' },
+              ]}
+              accentColor={portal.accentColor}
+            />
+          </div>
         </div>
       </div>
 
@@ -575,7 +557,7 @@ export default function PolicyListView({
             const isBenefOpen = activeDrawer === 'BENEF';
             const isCardOpen = isDocsOpen || isBenefOpen;
             const liveCount = livesCounts[p.policyId] !== undefined ? livesCounts[p.policyId] : '-';
-            const planHeader = p.policyHolderName || p.corporateName || p.planName || 'Policy';
+            const planHeader = p.policyHolderName || p.corporateName || (p.planName && p.planName !== 'Comprehensive Health Plan' ? p.planName : '') || p.planType || 'Policy';
 
             return (
               <div
@@ -609,10 +591,10 @@ export default function PolicyListView({
                       </h3>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', fontSize: '13px', color: '#64748b' }}>
-                      <span><strong style={{ color: '#475569' }}>Policy ID:</strong> {p.policyId}</span>
-                      <span>•</span>
-                      <span><strong style={{ color: '#475569' }}>Validity:</strong> {p.startDate || 'N/A'} &ndash; {p.endDate || 'N/A'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '13px', color: '#64748b' }}>
+                      <span>Policy ID: {p.policyId}</span>
+                      <span>|</span>
+                      <span>{p.startDate || 'N/A'} - {p.endDate || 'N/A'}</span>
                     </div>
                   </div>
 
@@ -835,6 +817,12 @@ export default function PolicyListView({
                               href={doc.downloadUrl}
                               target={isNetworkHospital ? '_self' : '_blank'}
                               rel="noreferrer"
+                              onClick={(e) => {
+                                if (isNetworkHospital) {
+                                  e.preventDefault();
+                                  router.push(doc.downloadUrl);
+                                }
+                              }}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -974,7 +962,7 @@ export default function PolicyListView({
                                   Emp ID
                                 </th>
                                 <th style={{ padding: '12px 14px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.06em' }}>
-                                  Relationship
+                                  Relation
                                 </th>
                               </tr>
                             </thead>
@@ -1021,59 +1009,68 @@ export default function PolicyListView({
                         </div>
 
                         {/* Pagination Bar */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            paddingTop: '12px',
-                            fontSize: '12.5px',
-                            color: '#64748b',
-                          }}
-                        >
-                          <div>
-                            Showing page {benefCache[p.policyId].page} (100 per page)
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button
-                              type="button"
-                              onClick={() => loadBeneficiariesForPolicy(p.policyId, benefCache[p.policyId].page - 1)}
-                              disabled={benefCache[p.policyId].page <= 1}
+                        {(() => {
+                          const totalCount = benefCache[p.policyId]?.totalCount || livesCounts[p.policyId] || (benefCache[p.policyId]?.list || []).length || 0;
+                          const totalPages = Math.ceil(totalCount / 100) || 1;
+                          const currentPage = benefCache[p.policyId]?.page || 1;
+                          const isNextDisabled = (currentPage * 100) >= totalCount;
+
+                          return (
+                            <div
                               style={{
-                                padding: '4px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid #cbd5e1',
-                                backgroundColor: '#ffffff',
-                                color: benefCache[p.policyId].page <= 1 ? '#cbd5e1' : '#334155',
-                                cursor: benefCache[p.policyId].page <= 1 ? 'not-allowed' : 'pointer',
-                                fontSize: '12px',
-                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                paddingTop: '12px',
+                                fontSize: '12.5px',
+                                color: '#64748b',
                               }}
                             >
-                              &larr; Prev
-                            </button>
-                            <span style={{ fontWeight: 650, color: '#1e293b' }}>
-                              Page {benefCache[p.policyId].page}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => loadBeneficiariesForPolicy(p.policyId, benefCache[p.policyId].page + 1)}
-                              disabled={benefCache[p.policyId].list.length < 100}
-                              style={{
-                                padding: '4px 12px',
-                                borderRadius: '6px',
-                                border: '1px solid #cbd5e1',
-                                backgroundColor: '#ffffff',
-                                color: benefCache[p.policyId].list.length < 100 ? '#cbd5e1' : '#334155',
-                                cursor: benefCache[p.policyId].list.length < 100 ? 'not-allowed' : 'pointer',
-                                fontSize: '12px',
-                                fontWeight: 600,
-                              }}
-                            >
-                              Next &rarr;
-                            </button>
-                          </div>
-                        </div>
+                              <div>
+                                Page {currentPage} of {totalPages} ({totalCount} total)
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => loadBeneficiariesForPolicy(p.policyId, currentPage - 1)}
+                                  disabled={currentPage <= 1}
+                                  style={{
+                                    padding: '4px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #cbd5e1',
+                                    backgroundColor: '#ffffff',
+                                    color: currentPage <= 1 ? '#cbd5e1' : '#334155',
+                                    cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
+                                    fontSize: '12px',
+                                    fontWeight: 650,
+                                  }}
+                                >
+                                  &larr; Prev
+                                </button>
+                                <span style={{ fontWeight: 650, color: '#1e293b' }}>
+                                  Page {currentPage} of {totalPages}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => loadBeneficiariesForPolicy(p.policyId, currentPage + 1)}
+                                  disabled={isNextDisabled}
+                                  style={{
+                                    padding: '4px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #cbd5e1',
+                                    backgroundColor: '#ffffff',
+                                    color: isNextDisabled ? '#cbd5e1' : '#334155',
+                                    cursor: isNextDisabled ? 'not-allowed' : 'pointer',
+                                    fontSize: '12px',
+                                    fontWeight: 650,
+                                  }}
+                                >
+                                  Next &rarr;
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </>
                     )}
                   </div>

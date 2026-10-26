@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PortalConfig } from '@/config/tenants';
 import { useToast } from '@/context/ToastContext';
+import { FormField, CustomSelect, CustomInput } from '@/tenants/Common/ui';
 
 interface ClientDetailsViewProps {
   portal: PortalConfig;
@@ -772,207 +773,92 @@ export default function ClientDetailsView({
             }}
           >
             {/* COLUMN 1, ROW 1: Entity Selector */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '18px', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '5px' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
-                  <line x1="9" y1="22" x2="9" y2="22.01" />
-                  <line x1="15" y1="22" x2="15" y2="22.01" />
-                  <line x1="9" y1="6" x2="9" y2="6.01" />
-                  <line x1="15" y1="6" x2="15" y2="6.01" />
-                  <line x1="9" y1="10" x2="9" y2="10.01" />
-                  <line x1="15" y1="10" x2="15" y2="10.01" />
-                  <line x1="9" y1="14" x2="9" y2="14.01" />
-                  <line x1="15" y1="14" x2="15" y2="14.01" />
-                  <line x1="9" y1="18" x2="9" y2="18.01" />
-                  <line x1="15" y1="18" x2="15" y2="18.01" />
-                </svg>
-                Select Entity <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <select
+            <FormField label="Select Entity" required>
+              <CustomSelect
                 value={selectedCorpId}
-                onChange={(e) => setSelectedCorpId(e.target.value)}
+                onChange={(val) => setSelectedCorpId(val)}
                 disabled={loadingFilters}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  padding: '0 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                }}
-              >
-                <option value="">Select Entity</option>
-                {entities.map((ent) => (
-                  <option key={ent.corpId} value={ent.corpId}>
-                    {ent.corpName}
-                  </option>
-                ))}
-              </select>
-            </div>
+                loading={loadingFilters}
+                placeholder="Select Entity"
+                options={entities.map((ent) => ({
+                  value: ent.corpId,
+                  label: ent.corpName,
+                }))}
+                accentColor={portal.accentColor || '#002D62'}
+              />
+            </FormField>
 
             {/* COLUMN 2, ROW 1: Policy Selector */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '18px', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '5px' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                Select Policy
-              </label>
-              <select
+            <FormField label="Select Policy">
+              <CustomSelect
                 value={selectedPolNo}
-                onChange={(e) => setSelectedPolNo(e.target.value)}
+                onChange={(val) => setSelectedPolNo(val)}
                 disabled={!selectedCorpId || policies.length === 0}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  padding: '0 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: !selectedCorpId ? '#f8fafc' : '#ffffff',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                }}
-              >
-                <option value="">Select Policy</option>
-                {policies.map((pol) => (
-                  <option key={pol.polNo} value={pol.polNo}>
-                    {pol.polNo}
-                  </option>
-                ))}
-              </select>
-            </div>
+                placeholder="Select Policy"
+                options={policies.map((pol) => ({
+                  value: pol.polNo,
+                  label: pol.polNo,
+                }))}
+                accentColor={portal.accentColor || '#002D62'}
+              />
+            </FormField>
 
             {/* COLUMN 3, ROW 1: Plan Selector */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '18px', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '5px' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-                Select Plan
-              </label>
-              <select
+            <FormField label="Select Plan">
+              <CustomSelect
                 value={selectedPlan}
-                onChange={(e) => setSelectedPlan(e.target.value)}
+                onChange={(val) => setSelectedPlan(val)}
                 disabled={!selectedPolNo || plans.length === 0}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  padding: '0 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: !selectedPolNo ? '#f8fafc' : '#ffffff',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                }}
-              >
-                <option value="">Select Plan</option>
-                {plans.map((pl) => (
-                  <option key={pl.planCode} value={pl.planCode}>
-                    {pl.planName}
-                  </option>
-                ))}
-              </select>
-            </div>
+                placeholder="Select Plan"
+                options={plans.map((pl) => ({
+                  value: pl.planCode,
+                  label: pl.planName,
+                }))}
+                accentColor={portal.accentColor || '#002D62'}
+              />
+            </FormField>
 
             {/* COLUMN 1, ROW 2: Insured Name (Directly below Entity) */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '18px', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '5px' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                Name
-              </label>
-              <input
+            <FormField label="Name">
+              <CustomInput
                 type="text"
                 placeholder="First / Last Name"
                 value={filterName}
                 onChange={(e) => setFilterName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && executeSearch(1)}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  padding: '0 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                }}
+                clearable
+                onClear={() => setFilterName('')}
+                accentColor={portal.accentColor || '#002D62'}
               />
-            </div>
+            </FormField>
 
             {/* COLUMN 2, ROW 2: Email ID (Directly below Policy) */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '18px', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '5px' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-                Email ID
-              </label>
-              <input
+            <FormField label="Email ID">
+              <CustomInput
                 type="email"
                 placeholder="Email address"
                 value={filterEmail}
                 onChange={(e) => setFilterEmail(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && executeSearch(1)}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  padding: '0 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                }}
+                clearable
+                onClear={() => setFilterEmail('')}
+                accentColor={portal.accentColor || '#002D62'}
               />
-            </div>
+            </FormField>
 
             {/* COLUMN 3, ROW 2: Staff ID (Directly below Plan) */}
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', height: '18px', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '5px' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="16" rx="2" />
-                  <circle cx="9" cy="10" r="2" />
-                  <line x1="15" y1="8" x2="17" y2="8" />
-                  <line x1="15" y1="12" x2="17" y2="12" />
-                  <line x1="7" y1="16" x2="17" y2="16" />
-                </svg>
-                Staff ID
-              </label>
-              <input
+            <FormField label="Staff ID">
+              <CustomInput
                 type="text"
                 placeholder="Staff ID"
                 value={filterStaffId}
                 onChange={(e) => setFilterStaffId(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && executeSearch(1)}
-                style={{
-                  width: '100%',
-                  height: '38px',
-                  padding: '0 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: '#ffffff',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                }}
+                clearable
+                onClear={() => setFilterStaffId('')}
+                accentColor={portal.accentColor || '#002D62'}
               />
-            </div>
+            </FormField>
           </div>
 
           {/* Vertical Separator Hairline */}
@@ -1954,28 +1840,22 @@ export default function ClientDetailsView({
               {/* Rows per page selector */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '12px', color: '#64748b' }}>Per page:</span>
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    const newLimit = Number(e.target.value);
-                    setLimit(newLimit);
-                    executeSearch(1, newLimit);
-                  }}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '12px',
-                    color: '#0f172a',
-                    backgroundColor: '#ffffff',
-                    outline: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
+                <div style={{ width: '80px' }}>
+                  <CustomSelect
+                    value={String(limit)}
+                    onChange={(val) => {
+                      const newLimit = Number(val);
+                      setLimit(newLimit);
+                      executeSearch(1, newLimit);
+                    }}
+                    options={[
+                      { label: '10', value: '10' },
+                      { label: '25', value: '25' },
+                      { label: '50', value: '50' },
+                    ]}
+                    accentColor={portal.accentColor}
+                  />
+                </div>
               </div>
             </div>
 
@@ -2028,11 +1908,12 @@ export default function ClientDetailsView({
         const isSelf = formValues.relation?.toLowerCase() === 'self' || formValues.relation?.toLowerCase() === 'insured';
         const disabledStyle: React.CSSProperties = {
           width: '100%',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          border: '1px solid #cbd5e1',
-          backgroundColor: '#f1f5f9',
-          color: '#475569',
+          height: '42px',
+          padding: '0 14px',
+          borderRadius: '8px',
+          border: '1.5px solid #e2e8f0',
+          backgroundColor: '#f8fafc',
+          color: '#64748b',
           fontSize: '13px',
           outline: 'none',
           boxSizing: 'border-box',
@@ -2040,21 +1921,25 @@ export default function ClientDetailsView({
         };
         const editableStyle: React.CSSProperties = {
           width: '100%',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          border: '1px solid #cbd5e1',
+          height: '42px',
+          padding: '0 14px',
+          borderRadius: '8px',
+          border: '1.5px solid #e2e8f0',
           backgroundColor: '#ffffff',
           color: '#0f172a',
           fontSize: '13px',
           outline: 'none',
           boxSizing: 'border-box',
+          transition: 'all 0.15s ease',
         };
         const labelStyle: React.CSSProperties = {
           display: 'block',
-          fontSize: '13px',
-          fontWeight: 600,
-          color: '#334155',
-          marginBottom: '4px',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: '#475569',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '6px',
         };
 
         return (
@@ -2161,229 +2046,219 @@ export default function ClientDetailsView({
                       {/* First Name */}
                       <div>
                         <label style={labelStyle}>First Name</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter First Name"
                           maxLength={100}
                           value={formValues.firstName}
                           onChange={(e) => handleInputChange('firstName', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Last/Middle Name */}
                       <div>
                         <label style={labelStyle}>Last/Middle Name</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter Last/Middle Name"
                           maxLength={100}
                           value={formValues.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Insurer Id No */}
                       <div>
                         <label style={labelStyle}>Insurer Id No</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter Insurer Id No"
                           maxLength={100}
                           value={formValues.insurerNo}
                           onChange={(e) => handleInputChange('insurerNo', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* PIH Member Id (Always Readonly/Disabled) */}
                       <div>
                         <label style={labelStyle}>PIH Member Id</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           readOnly
                           disabled
                           value={formValues.pihNumber}
-                          style={disabledStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Email Id (Disabled if isSelf) */}
                       <div>
                         <label style={labelStyle}>Email Id</label>
-                        <input
+                        <CustomInput
                           type="email"
                           maxLength={150}
                           disabled={isSelf}
                           value={formValues.emailId}
                           onChange={(e) => handleInputChange('emailId', e.target.value)}
-                          style={isSelf ? disabledStyle : editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Mobile Number */}
                       <div>
                         <label style={labelStyle}>Mobile Number</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter Mobile Number"
                           maxLength={50}
                           value={formValues.mobileNumber}
                           onChange={(e) => handleInputChange('mobileNumber', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* ID Type (Always Readonly/Disabled) */}
                       <div>
                         <label style={labelStyle}>ID Type</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           readOnly
                           disabled
                           value={formValues.idType}
-                          style={disabledStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* ID No./Passport No */}
                       <div>
                         <label style={labelStyle}>ID No./Passport No</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter ID No./Passport No"
                           maxLength={50}
                           value={formValues.passportNo}
                           onChange={(e) => handleInputChange('passportNo', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* DOB */}
                       <div>
                         <label style={labelStyle}>DOB</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="DD-MMM-YYYY"
                           maxLength={50}
                           value={formValues.dob}
                           onChange={(e) => handleInputChange('dob', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Age (Always Readonly/Disabled) */}
                       <div>
                         <label style={labelStyle}>Age</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           readOnly
                           disabled
                           value={formValues.age}
-                          style={disabledStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Gender */}
                       <div>
                         <label style={labelStyle}>Gender</label>
-                        <select
-                          value={formValues.gender}
-                          onChange={(e) => handleInputChange('gender', e.target.value)}
-                          style={editableStyle}
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                        </select>
+                        <CustomSelect
+                          value={formValues.gender || ''}
+                          onChange={(val) => handleInputChange('gender', val)}
+                          placeholder="Select Gender"
+                          options={[
+                            { label: 'Male', value: 'Male' },
+                            { label: 'Female', value: 'Female' },
+                          ]}
+                          accentColor={portal.accentColor}
+                        />
                       </div>
 
                       {/* Relationship (Disabled if isSelf) */}
                       <div>
                         <label style={labelStyle}>Relationship</label>
-                        <select
+                        <CustomSelect
                           disabled={isSelf}
-                          value={formValues.relation}
-                          onChange={(e) => handleInputChange('relation', e.target.value)}
-                          style={isSelf ? disabledStyle : editableStyle}
-                        >
-                          <option value="">Select Relationship</option>
-                          <option value="Insured">Insured</option>
-                          <option value="Self">Self</option>
-                          <option value="Spouse">Spouse</option>
-                          <option value="Child">Child</option>
-                          <option value="Father">Father</option>
-                          <option value="Mother">Mother</option>
-                          <option value="Other">Other</option>
-                        </select>
+                          value={formValues.relation || ''}
+                          onChange={(val) => handleInputChange('relation', val)}
+                          placeholder="Select Relationship"
+                          options={[
+                            { label: 'Insured', value: 'Insured' },
+                            { label: 'Self', value: 'Self' },
+                            { label: 'Spouse', value: 'Spouse' },
+                            { label: 'Child', value: 'Child' },
+                            { label: 'Father', value: 'Father' },
+                            { label: 'Mother', value: 'Mother' },
+                            { label: 'Other', value: 'Other' },
+                          ]}
+                          accentColor={portal.accentColor}
+                        />
                       </div>
 
                       {/* Marital Status */}
                       <div>
                         <label style={labelStyle}>Marital Status</label>
-                        <select
-                          value={formValues.maritalStatus}
-                          onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-                          style={editableStyle}
-                        >
-                          <option value="">Select Marital Status</option>
-                          <option value="Single">Single</option>
-                          <option value="Married">Married</option>
-                          <option value="Divorced">Divorced</option>
-                          <option value="Widowed">Widowed</option>
-                        </select>
+                        <CustomSelect
+                          value={formValues.maritalStatus || ''}
+                          onChange={(val) => handleInputChange('maritalStatus', val)}
+                          placeholder="Select Marital Status"
+                          options={[
+                            { label: 'Single', value: 'Single' },
+                            { label: 'Married', value: 'Married' },
+                            { label: 'Divorced', value: 'Divorced' },
+                            { label: 'Widowed', value: 'Widowed' },
+                          ]}
+                          accentColor={portal.accentColor}
+                        />
                       </div>
 
                       {/* Nationality */}
                       <div>
                         <label style={labelStyle}>Nationality</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter Nationality"
                           maxLength={100}
                           value={formValues.nationality}
                           onChange={(e) => handleInputChange('nationality', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Home Country */}
                       <div>
                         <label style={labelStyle}>Home Country</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter Home Country"
                           maxLength={100}
                           value={formValues.homeCountry}
                           onChange={(e) => handleInputChange('homeCountry', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Sum Assured */}
                       <div>
                         <label style={labelStyle}>Sum Assured</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter Sum Assured"
                           maxLength={12}
                           value={formValues.sumAssured}
                           onChange={(e) => handleInputChange('sumAssured', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Area */}
                       <div>
                         <label style={labelStyle}>Area</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="Enter Area"
                           maxLength={100}
                           value={formValues.area}
                           onChange={(e) => handleInputChange('area', e.target.value)}
-                          style={editableStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
@@ -2396,35 +2271,33 @@ export default function ClientDetailsView({
                           maxLength={500}
                           value={formValues.address}
                           onChange={(e) => handleInputChange('address', e.target.value)}
-                          style={{ ...editableStyle, resize: 'vertical' }}
+                          style={{ ...editableStyle, height: 'auto', padding: '10px 14px', resize: 'vertical' }}
                         />
                       </div>
 
                       {/* Effective (Always Readonly/Disabled) */}
                       <div>
                         <label style={labelStyle}>Effective</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="DD-MMM-YYYY"
                           maxLength={50}
                           readOnly
                           disabled
                           value={formValues.effectiveDate}
-                          style={disabledStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
 
                       {/* Expiry (Always Readonly/Disabled) */}
                       <div>
                         <label style={labelStyle}>Expiry</label>
-                        <input
-                          type="text"
+                        <CustomInput
                           placeholder="DD-MMM-YYYY"
                           maxLength={50}
                           readOnly
                           disabled
                           value={formValues.expiryDate}
-                          style={disabledStyle}
+                          accentColor={portal.accentColor}
                         />
                       </div>
                     </div>

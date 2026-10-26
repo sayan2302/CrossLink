@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { PortalConfig } from '@/config/tenants';
+import { FormField, CustomInput } from '@/tenants/Common/ui';
 import 'leaflet/dist/leaflet.css';
 
 interface UserSession {
@@ -648,53 +649,34 @@ export default function SearchMedicalProviderView({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', alignItems: 'flex-start' }}>
           {/* Location Autocomplete Input */}
           <div style={{ position: 'relative' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
               Search by City, Province or Address
             </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                value={locationInput}
-                onChange={(e) => handleLocationInputChange(e.target.value)}
-                onFocus={() => {
-                  if (suggestions.length > 0) setShowSuggestions(true);
-                }}
-                placeholder="e.g. Bangkok, Sukhumvit, Silom, Phuket..."
-                style={{
-                  width: '100%',
-                  height: '42px',
-                  padding: '0 38px 0 38px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-              {/* Pin Icon */}
-              <div style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <CustomInput
+              value={locationInput}
+              onChange={(e) => handleLocationInputChange(e.target.value)}
+              onFocus={() => {
+                if (suggestions.length > 0) setShowSuggestions(true);
+              }}
+              placeholder="e.g. Bangkok, Sukhumvit, Silom, Phuket..."
+              accentColor={portal.accentColor}
+              clearable={!isSearchingLocation}
+              onClear={() => {
+                setLocationInput('');
+                setSuggestions([]);
+              }}
+              leadingIcon={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#64748b' }}>
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
-              </div>
-              {/* Spinner or Clear */}
-              {isSearchingLocation ? (
-                <div style={{ position: 'absolute', right: '12px', top: '13px', width: '16px', height: '16px', borderRadius: '50%', border: '2px solid #cbd5e1', borderTopColor: '#0284c7', animation: 'pulse 0.8s linear infinite' }} />
-              ) : locationInput ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocationInput('');
-                    setSuggestions([]);
-                  }}
-                  style={{ position: 'absolute', right: '10px', top: '10px', border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px' }}
-                >
-                  &times;
-                </button>
-              ) : null}
-            </div>
+              }
+              trailingIcon={
+                isSearchingLocation ? (
+                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid #cbd5e1', borderTopColor: portal.accentColor, animation: 'pulse 0.8s linear infinite' }} />
+                ) : undefined
+              }
+            />
 
             {/* Suggestions Dropdown */}
             {showSuggestions && suggestions.length > 0 && (
@@ -746,36 +728,23 @@ export default function SearchMedicalProviderView({
           </div>
 
           {/* Quick Name Filter */}
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '6px' }}>
-              Filter by Facility Name
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                value={nameFilter}
-                onChange={(e) => setNameFilter(e.target.value)}
-                placeholder="Search facility name..."
-                style={{
-                  width: '100%',
-                  height: '42px',
-                  padding: '0 14px 0 38px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-              <div style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <FormField label="Filter by Facility Name">
+            <CustomInput
+              type="text"
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              placeholder="Search facility name..."
+              clearable
+              onClear={() => setNameFilter('')}
+              accentColor={portal.accentColor}
+              leadingIcon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-              </div>
-            </div>
-          </div>
+              }
+            />
+          </FormField>
 
           {/* Use Current GPS Location Button */}
           <div>

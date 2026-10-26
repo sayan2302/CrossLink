@@ -31,9 +31,6 @@ export default function LawtonPartnerDashboard({
         }}
       >
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '20px', backgroundColor: `${portal.accentColor}15`, color: portal.accentColor, fontSize: '12px', fontWeight: 700, marginBottom: '12px', letterSpacing: '0.04em' }}>
-            <span>🤝</span> LAWTON ASIA BROKER & PARTNER PORTAL
-          </div>
           <h1
             style={{
               fontSize: '26px',
@@ -46,7 +43,7 @@ export default function LawtonPartnerDashboard({
             Hello, <span style={{ fontWeight: 800 }}>&quot;{user.username}&quot;</span>
           </h1>
           <p style={{ fontSize: '15px', color: '#475569', maxWidth: '640px', lineHeight: 1.5, margin: 0 }}>
-            Welcome to <span style={{ fontWeight: 600, color: portal.accentColor }}>{portal.brandName}</span>. Submit broker claims, manage client policies, view endorsements, and download member e-cards.
+            Welcome to <span style={{ fontWeight: 600, color: '#0f172a' }}>{portal.welcomeBrandingName || 'LawtonAsia'}</span>. We&apos;re here for you and your team&apos;s health and wellness.
           </p>
         </div>
       </div>

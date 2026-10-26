@@ -5,6 +5,7 @@ import { PortalViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
 import { formatDisplayDate } from '@/lib/date';
 import { formatCurrency } from '@/lib/formatters';
+import { FormField, CustomInput, CustomSelect } from '@/tenants/Common/ui';
 
 interface CorporateEntity {
   corpId: number;
@@ -193,9 +194,6 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
     }
   };
 
-  const closeAllClaims = () => {
-    setExpandedClaimRef(null);
-  };
 
   const totalPages = Math.ceil(claims.length / pageSize) || 1;
   const paginatedClaims = claims.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -228,82 +226,76 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
       {/* Search Filters */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', alignItems: 'flex-end' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>
-              Select Entity <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <select
+          <FormField label="Select Entity" required>
+            <CustomSelect
               value={selectedCorpId}
-              onChange={(e) => handleEntityChange(e.target.value)}
-              disabled={loadingEntities}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
-            >
-              <option value="">{loadingEntities ? 'Loading entities...' : 'Select Entity'}</option>
-              {entities.map((ent) => (
-                <option key={ent.corpId} value={ent.corpId}>{ent.corpName}</option>
-              ))}
-            </select>
-          </div>
+              onChange={(val) => handleEntityChange(val)}
+              options={entities.map((ent) => ({ value: String(ent.corpId), label: ent.corpName }))}
+              placeholder="Select Entity"
+              loading={loadingEntities}
+              accentColor={portal.accentColor}
+            />
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Select Policy</label>
-            <select
+          <FormField label="Select Policy">
+            <CustomSelect
               value={selectedPolNo}
-              onChange={(e) => setSelectedPolNo(e.target.value)}
+              onChange={(val) => setSelectedPolNo(val)}
+              options={[{ value: '', label: 'All Policies' }, ...policies.map((p) => ({ value: p.polNo, label: p.polNo }))]}
+              placeholder="All Policies"
               disabled={!selectedCorpId || loadingPolicies}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
-            >
-              <option value="">{loadingPolicies ? 'Loading policies...' : 'All Policies'}</option>
-              {policies.map((p, idx) => (
-                <option key={`${p.polNo}-${idx}`} value={p.polNo}>{p.polNo}</option>
-              ))}
-            </select>
-          </div>
+              loading={loadingPolicies}
+              accentColor={portal.accentColor}
+            />
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Claim Type</label>
-            <select
+          <FormField label="Claim Type">
+            <CustomSelect
               value={claimType}
-              onChange={(e) => setClaimType(e.target.value as any)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
-            >
-              <option value="Active">Active Claims</option>
-              <option value="Past">Past Claims</option>
-            </select>
-          </div>
+              onChange={(val) => setClaimType(val as 'Active' | 'Past')}
+              options={[
+                { value: 'Active', label: 'Active Claims' },
+                { value: 'Past', label: 'Past Claims' },
+              ]}
+              accentColor={portal.accentColor}
+            />
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Employee Name</label>
-            <input
+          <FormField label="Employee Name">
+            <CustomInput
               type="text"
               placeholder="e.g. Somchai"
               value={empName}
               onChange={(e) => setEmpName(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setEmpName('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Staff ID</label>
-            <input
+          <FormField label="Staff ID">
+            <CustomInput
               type="text"
               placeholder="e.g. STF-001"
               value={empCode}
               onChange={(e) => setEmpCode(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setEmpCode('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Claim Number</label>
-            <input
+          <FormField label="Claim Number">
+            <CustomInput
               type="text"
               placeholder="e.g. CLM102938"
               value={claimNo}
               onChange={(e) => setClaimNo(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setClaimNo('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
           <div>
             <button
@@ -361,66 +353,64 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
 
       {/* Results Section */}
       {hasSearched && (
-        <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)', marginBottom: '32px' }}>
-          {/* Action Bar matching legacy _ClaimListBroker.cshtml */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', backgroundColor: '#f8fafc' }}>
-            <div style={{ fontSize: '13px', fontWeight: 650, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a90c4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
+        <div style={{ marginBottom: '32px' }}>
+          {/* Total Claims Count Chip */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: '14px' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                backgroundColor: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                color: '#1e40af',
+                fontSize: '13px',
+                fontWeight: 600,
+                boxShadow: '0 1px 2px rgba(30, 64, 175, 0.04)',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
               </svg>
               {searching ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>Searching claims</span>
-                  <div className="crosslink-skeleton" style={{ width: '60px', height: '14px', borderRadius: '4px' }} />
+                  <div className="crosslink-skeleton" style={{ width: '50px', height: '14px', borderRadius: '4px' }} />
                 </div>
               ) : (
-                <span>Total Claims: <strong style={{ color: '#0f172a' }}>{claims.length}</strong></span>
+                <span>
+                  Total Claims:{' '}
+                  <strong style={{ color: '#1e3a8a', fontWeight: 700 }}>
+                    {claims.length}
+                  </strong>
+                </span>
               )}
             </div>
-            {!searching && expandedClaimRef && (
-              <button
-                type="button"
-                onClick={closeAllClaims}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  backgroundColor: '#ef4444',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 1px 2px rgba(239, 68, 68, 0.2)',
-                }}
-              >
-                <span>✕</span> Close All Claims
-              </button>
-            )}
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#1e293b', borderBottom: '1px solid #0f172a' }}>
-                  <th style={{ width: '40px', padding: '14px 8px 14px 16px' }}></th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>First Name</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Last Name</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Policy Number</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Claim ID</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Type of Claim</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase' }}>Treatment Date</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', textAlign: 'right' }}>Claimed Amount</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', textAlign: 'right' }}>Approved Amount</th>
-                  <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#f8fafc', textTransform: 'uppercase', textAlign: 'center', width: '80px' }}>View</th>
-                </tr>
-              </thead>
+          {/* Table Container Card */}
+          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#e2e8f0', borderBottom: '1px solid #cbd5e1' }}>
+                    <th style={{ width: '44px', padding: '14px 8px 14px 16px', textAlign: 'center' }} aria-label="Toggle claim details" />
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>First Name</th>
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Last Name</th>
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Policy Number</th>
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Claim ID</th>
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Type of Claim</th>
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Treatment Date</th>
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'right' }}>Claimed Amount</th>
+                    <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'right' }}>Approved Amount</th>
+                  </tr>
+                </thead>
               <tbody>
                 {searching ? (
                   Array.from({ length: 6 }).map((_, idx) => (
@@ -485,12 +475,6 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
                           style={{ width: '65px', height: '14px', borderRadius: '4px', marginLeft: 'auto' }}
                         />
                       </td>
-                      <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                        <div
-                          className="crosslink-skeleton"
-                          style={{ width: '48px', height: '22px', borderRadius: '4px', margin: '0 auto' }}
-                        />
-                      </td>
                     </tr>
                   ))
                 ) : paginatedClaims.length > 0 ? (
@@ -505,10 +489,67 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
                       <React.Fragment key={c.claimReferenceNo}>
                         <tr
                           onClick={() => toggleAccordion(c.claimReferenceNo)}
-                          style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', backgroundColor: isExpanded ? '#f8fafc' : '#ffffff', transition: 'background-color 0.15s ease' }}
+                          role="button"
+                          aria-expanded={isExpanded}
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              toggleAccordion(c.claimReferenceNo);
+                            }
+                          }}
+                          style={{
+                            cursor: 'pointer',
+                            borderBottom: isExpanded ? '1px solid #dbeafe' : '1px solid #f1f5f9',
+                            backgroundColor: isExpanded ? '#f0f7ff' : '#ffffff',
+                            boxShadow: isExpanded ? `inset 4px 0 0 ${portal.accentColor || '#002D62'}` : 'none',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isExpanded) {
+                              e.currentTarget.style.backgroundColor = '#f8fafc';
+                            } else {
+                              e.currentTarget.style.backgroundColor = '#e0f2fe';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isExpanded) {
+                              e.currentTarget.style.backgroundColor = '#ffffff';
+                            } else {
+                              e.currentTarget.style.backgroundColor = '#f0f7ff';
+                            }
+                          }}
                         >
-                          <td style={{ padding: '14px 8px 14px 16px', textAlign: 'center', color: '#64748b' }}>
-                            {isExpanded ? '▼' : '▶'}
+                          <td style={{ width: '44px', padding: '14px 8px 14px 16px', textAlign: 'center' }}>
+                            <div
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '50%',
+                                backgroundColor: isExpanded ? '#dbeafe' : '#f8fafc',
+                                border: isExpanded ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+                                color: isExpanded ? (portal.accentColor || '#002D62') : '#64748b',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                boxShadow: isExpanded ? '0 1px 3px rgba(0, 45, 98, 0.12)' : 'none',
+                              }}
+                            >
+                              <svg
+                                width="13"
+                                height="13"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="9 18 15 12 9 6" />
+                              </svg>
+                            </div>
                           </td>
                           <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{firstName}</td>
                           <td style={{ padding: '14px 16px', fontWeight: 700, color: '#0f172a' }}>{lastName}</td>
@@ -522,34 +563,74 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
                           <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
                             {c.approvedAmount > 0 ? formatCurrency(c.approvedAmount) : '--'}
                           </td>
-                          <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '4px 10px',
-                                borderRadius: '4px',
-                                backgroundColor: '#10b981',
-                                color: '#ffffff',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                              }}
-                            >
-                              View
-                            </span>
-                          </td>
                         </tr>
 
                         {/* Accordion Detail Row matching legacy _LawtonClaimDetail.cshtml */}
                         {isExpanded && (
-                          <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                            <td colSpan={10} style={{ padding: '20px 24px' }}>
+                          <tr style={{ backgroundColor: '#f0f7ff', borderBottom: '2px solid #bfdbfe' }}>
+                            <td
+                              colSpan={9}
+                              style={{
+                                padding: '20px 24px',
+                                backgroundColor: '#f0f7ff',
+                                boxShadow: `inset 4px 0 0 ${portal.accentColor || '#002D62'}`,
+                                borderTop: 'none',
+                              }}
+                            >
                               {loadingClaimDetailRef === c.claimReferenceNo ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
-                                  <svg className="crosslink-spinner" style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10" stroke="#cbd5e1" strokeWidth="3" fill="none" />
-                                    <path d="M12 2a10 10 0 0 1 10 10" stroke={portal.accentColor} strokeWidth="3" strokeLinecap="round" fill="none" />
-                                  </svg>
-                                  Loading claim activity and details...
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                  {/* Skeleton Panel 1: Claim Activity */}
+                                  <div style={{ borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', backgroundColor: '#ffffff' }}>
+                                    <div style={{ backgroundColor: '#4a90c4', color: '#ffffff', padding: '8px 16px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span>📄</span> Claim Activity
+                                    </div>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                                      <thead>
+                                        <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155', borderRight: '1px solid #cbd5e1' }}>Status</th>
+                                          <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155' }}>Date</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {[1, 2].map((skelIdx) => (
+                                          <tr key={`act-skel-${skelIdx}`} style={{ borderBottom: skelIdx === 1 ? '1px solid #cbd5e1' : 'none', backgroundColor: '#ffffff' }}>
+                                            <td style={{ padding: '10px 14px', borderRight: '1px solid #cbd5e1' }}>
+                                              <div className="crosslink-skeleton" style={{ width: '90px', height: '14px', borderRadius: '4px' }} />
+                                            </td>
+                                            <td style={{ padding: '10px 14px' }}>
+                                              <div className="crosslink-skeleton" style={{ width: '110px', height: '14px', borderRadius: '4px' }} />
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+
+                                  {/* Skeleton Panel 2: Details */}
+                                  <div style={{ borderRadius: '8px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', backgroundColor: '#ffffff' }}>
+                                    <div style={{ backgroundColor: '#4a90c4', color: '#ffffff', padding: '8px 16px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span>➕</span> Details
+                                    </div>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', backgroundColor: '#ffffff' }}>
+                                      <tbody>
+                                        {[
+                                          { label: 'Date Of Admission', width: '110px' },
+                                          { label: 'Date Of Discharge', width: '110px' },
+                                          { label: 'Total Claimed', width: '85px' },
+                                          { label: 'Total Payable', width: '85px' },
+                                        ].map((item, dIdx) => (
+                                          <tr key={`dtl-skel-${dIdx}`} style={{ borderBottom: dIdx < 3 ? '1px solid #cbd5e1' : 'none' }}>
+                                            <th style={{ width: '50%', padding: '8px 14px', textAlign: 'left', fontWeight: 600, color: '#334155', backgroundColor: '#f1f5f9', borderRight: '1px solid #cbd5e1' }}>
+                                              {item.label}
+                                            </th>
+                                            <td style={{ padding: '8px 14px' }}>
+                                              <div className="crosslink-skeleton" style={{ width: item.width, height: '14px', borderRadius: '4px' }} />
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
                                 </div>
                               ) : detail ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -644,7 +725,7 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
                   })
                 ) : (
                   <tr>
-                    <td colSpan={10} style={{ padding: '48px 24px', textAlign: 'center', color: '#64748b' }}>
+                    <td colSpan={9} style={{ padding: '48px 24px', textAlign: 'center', color: '#64748b' }}>
                       {errorMessage || 'No claims records found matching your query criteria.'}
                     </td>
                   </tr>
@@ -678,7 +759,8 @@ export default function LawtonPartnerViewClaims({ portal, onBack }: PortalViewPr
             </div>
           )}
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 }

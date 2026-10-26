@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PortalViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
+import { CustomInput } from '@/tenants/Common/ui';
 
 interface UserProfileData {
   userId?: number;
@@ -615,18 +616,10 @@ export default function LawtonPartnerProfile({ portal, user, onBack }: PortalVie
                   {/* Name (Readonly) */}
                   <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center' }}>
                     <label style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>Name</label>
-                    <input
-                      type="text"
+                    <CustomInput
                       disabled
                       value={profile.userName || ''}
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #e2e8f0',
-                        backgroundColor: '#f8fafc',
-                        color: '#64748b',
-                        fontSize: '14px',
-                      }}
+                      accentColor={portal.accentColor}
                     />
                   </div>
 
@@ -635,18 +628,12 @@ export default function LawtonPartnerProfile({ portal, user, onBack }: PortalVie
                     <label style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
                       Address<span style={{ color: '#ef4444' }}>*</span>
                     </label>
-                    <input
-                      type="text"
+                    <CustomInput
                       value={editAddress}
                       onChange={(e) => setEditAddress(e.target.value)}
                       placeholder="Enter address"
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        outline: 'none',
-                      }}
+                      accentColor={portal.accentColor}
+                      clearable
                     />
                   </div>
 
@@ -655,34 +642,35 @@ export default function LawtonPartnerProfile({ portal, user, onBack }: PortalVie
                     <label style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
                       Mobile Phone<span style={{ color: '#ef4444' }}>*</span>
                     </label>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                       <span style={{
-                        padding: '10px 12px',
-                        backgroundColor: '#f1f5f9',
-                        border: '1px solid #cbd5e1',
+                        height: '42px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0 12px',
+                        backgroundColor: '#f8fafc',
+                        border: '1.5px solid #e2e8f0',
                         borderRight: 'none',
                         borderRadius: '8px 0 0 8px',
-                        fontSize: '14px',
+                        fontSize: '13px',
                         fontWeight: 600,
                         color: '#475569',
+                        boxSizing: 'border-box',
                       }}>
                         +66-
                       </span>
-                      <input
-                        type="tel"
-                        value={editMobile}
-                        onChange={(e) => setEditMobile(e.target.value.replace(/[^0-9]/g, ''))}
-                        maxLength={10}
-                        placeholder="10-digit mobile"
-                        style={{
-                          flex: 1,
-                          padding: '10px 14px',
-                          borderRadius: '0 8px 8px 0',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '14px',
-                          outline: 'none',
-                        }}
-                      />
+                      <div style={{ flex: 1 }}>
+                        <CustomInput
+                          type="tel"
+                          value={editMobile}
+                          onChange={(e) => setEditMobile(e.target.value.replace(/[^0-9]/g, ''))}
+                          maxLength={10}
+                          placeholder="10-digit mobile"
+                          accentColor={portal.accentColor}
+                          clearable
+                          style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -691,18 +679,13 @@ export default function LawtonPartnerProfile({ portal, user, onBack }: PortalVie
                     <label style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
                       Email address<span style={{ color: '#ef4444' }}>*</span>
                     </label>
-                    <input
+                    <CustomInput
                       type="email"
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
                       placeholder="name@company.com"
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        outline: 'none',
-                      }}
+                      accentColor={portal.accentColor}
+                      clearable
                     />
                   </div>
 
@@ -821,21 +804,14 @@ export default function LawtonPartnerProfile({ portal, user, onBack }: PortalVie
                     Old password<span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <input
+                    <CustomInput
                       type={showOldPassword ? 'text' : 'password'}
                       value={oldPassword}
                       onChange={(e) => setOldPassword(e.target.value)}
                       placeholder="Enter old password"
                       autoComplete="off"
-                      style={{
-                        width: '100%',
-                        padding: '10px 42px 10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
+                      accentColor={portal.accentColor}
+                      style={{ paddingRight: '42px' }}
                     />
                     <button
                       type="button"
@@ -876,21 +852,14 @@ export default function LawtonPartnerProfile({ portal, user, onBack }: PortalVie
                     New password<span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <input
+                    <CustomInput
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                       autoComplete="off"
-                      style={{
-                        width: '100%',
-                        padding: '10px 42px 10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
+                      accentColor={portal.accentColor}
+                      style={{ paddingRight: '42px' }}
                     />
                     <button
                       type="button"
@@ -931,21 +900,14 @@ export default function LawtonPartnerProfile({ portal, user, onBack }: PortalVie
                     Confirm password<span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <input
+                    <CustomInput
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm new password"
                       autoComplete="off"
-                      style={{
-                        width: '100%',
-                        padding: '10px 42px 10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '14px',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
+                      accentColor={portal.accentColor}
+                      style={{ paddingRight: '42px' }}
                     />
                     <button
                       type="button"

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PortalViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
+import { FormField, CustomSelect, CustomInput } from '@/tenants/Common/ui';
 
 interface EcardEntity {
   corpId: number;
@@ -351,73 +352,42 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
           }}
         >
           {/* Select Entity */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-              Select Entity <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <select
+          <FormField label="Select Entity" required>
+            <CustomSelect
               id="CorpIds"
               value={selectedCorpId}
-              onChange={(e) => handleEntityChange(e.target.value)}
+              onChange={(val) => handleEntityChange(val)}
               disabled={loadingEntities}
-              style={{
-                width: '100%',
-                height: '42px',
-                padding: '0 14px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '13px',
-                color: '#0f172a',
-                backgroundColor: '#ffffff',
-                outline: 'none',
-              }}
-            >
-              <option value="">{loadingEntities ? 'Loading entities...' : 'Select Entity'}</option>
-              {entities.map((ent) => (
-                <option key={ent.corpId} value={ent.corpId}>
-                  {ent.corpName}
-                </option>
-              ))}
-            </select>
-          </div>
+              loading={loadingEntities}
+              placeholder="Select Entity"
+              options={entities.map((ent) => ({
+                value: String(ent.corpId),
+                label: ent.corpName,
+              }))}
+              accentColor={portal.accentColor}
+            />
+          </FormField>
 
           {/* Select Policy */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-              Select Policy <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <select
+          <FormField label="Select Policy" required>
+            <CustomSelect
               id="ddlPoliciesForCorp"
               value={selectedPolNo}
-              onChange={(e) => handlePolicyChange(e.target.value)}
+              onChange={(val) => handlePolicyChange(val)}
               disabled={!selectedCorpId || loadingPolicies}
-              style={{
-                width: '100%',
-                height: '42px',
-                padding: '0 14px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '13px',
-                color: '#0f172a',
-                backgroundColor: '#ffffff',
-                outline: 'none',
-              }}
-            >
-              <option value="">{loadingPolicies ? 'Loading policies...' : 'Select Policy'}</option>
-              {policies.map((pol) => (
-                <option key={pol.polNo} value={pol.polNo}>
-                  {pol.polNo}
-                </option>
-              ))}
-            </select>
-          </div>
+              loading={loadingPolicies}
+              placeholder="Select Policy"
+              options={policies.map((pol) => ({
+                value: pol.polNo,
+                label: pol.polNo,
+              }))}
+              accentColor={portal.accentColor}
+            />
+          </FormField>
 
           {/* Enter Beneficiary Name */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-              Enter Beneficiary Name <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <input
+          <FormField label="Enter Beneficiary Name" required>
+            <CustomInput
               type="text"
               id="txtBrokerBenefName"
               placeholder="Beneficiary Name"
@@ -429,20 +399,11 @@ export default function LawtonPartnerDownloadEcards({ portal, onBack }: PortalVi
                   executeSearch();
                 }
               }}
-              style={{
-                width: '100%',
-                height: '42px',
-                padding: '0 14px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '13px',
-                color: '#0f172a',
-                backgroundColor: '#ffffff',
-                boxSizing: 'border-box',
-                outline: 'none',
-              }}
+              clearable
+              onClear={() => setBenefName('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
           {/* Single Unified Search Button */}
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>

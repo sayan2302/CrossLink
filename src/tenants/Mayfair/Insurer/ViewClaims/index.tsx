@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PortalViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
+import { FormField, CustomInput, CustomSelect } from '@/tenants/Common/ui';
 
 interface ClaimRecord {
   claimRefNo: string;
@@ -97,42 +98,45 @@ export default function MayfairInsurerViewClaims({ portal, onBack }: PortalViewP
       {/* Filter Form */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', alignItems: 'flex-end' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Insured Name</label>
-            <input
+          <FormField label="Insured Name">
+            <CustomInput
               type="text"
               placeholder="e.g. John Doe"
               value={insuredName}
               onChange={(e) => setInsuredName(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setInsuredName('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Claim Number</label>
-            <input
+          <FormField label="Claim Number">
+            <CustomInput
               type="text"
               placeholder="e.g. CLM102938"
               value={claimNo}
               onChange={(e) => setClaimNo(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setClaimNo('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Adjudication Status</label>
-            <select
+          <FormField label="Adjudication Status">
+            <CustomSelect
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
-            >
-              <option value="">All Statuses</option>
-              <option value="Approved">Approved</option>
-              <option value="Pending">Pending Audit</option>
-              <option value="Declined">Declined</option>
-              <option value="Settled">Settled</option>
-            </select>
-          </div>
+              onChange={(val) => setStatusFilter(val)}
+              options={[
+                { value: '', label: 'All Statuses' },
+                { value: 'Approved', label: 'Approved' },
+                { value: 'Pending', label: 'Pending Audit' },
+                { value: 'Declined', label: 'Declined' },
+                { value: 'Settled', label: 'Settled' },
+              ]}
+              placeholder="All Statuses"
+              accentColor={portal.accentColor}
+            />
+          </FormField>
 
           <div>
             <button

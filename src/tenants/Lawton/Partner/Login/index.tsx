@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { LoginViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
+import { CustomInput } from '@/tenants/Common/ui';
 
 export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
   const router = useRouter();
@@ -314,33 +315,20 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
                 Broker ID / Username
               </label>
-              <input
-                type="text"
+              <CustomInput
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your broker username"
                 required
                 autoFocus
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '10px',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e1',
-                  color: '#0f172a',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'all 0.15s ease',
-                  boxSizing: 'border-box',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = portal.accentColor;
-                  e.target.style.boxShadow = `0 0 0 3px ${portal.accentColor}20`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#cbd5e1';
-                  e.target.style.boxShadow = 'none';
-                }}
+                accentColor={portal.accentColor}
+                clearable
+                leadingIcon={
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#94a3b8' }}>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                }
               />
             </div>
 
@@ -360,53 +348,37 @@ export default function LawtonPartnerLogin({ portal }: LoginViewProps) {
                   Forgot password?
                 </a>
               </div>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px 48px 12px 16px',
-                    borderRadius: '10px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    color: '#0f172a',
-                    fontSize: '14px',
-                    outline: 'none',
-                    transition: 'all 0.15s ease',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = portal.accentColor;
-                    e.target.style.boxShadow = `0 0 0 3px ${portal.accentColor}20`;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#cbd5e1';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: '#64748b',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                  }}
-                >
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
-              </div>
+              <CustomInput
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                accentColor={portal.accentColor}
+                leadingIcon={
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#94a3b8' }}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                }
+                trailingIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748b',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      padding: 0,
+                    }}
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                }
+              />
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

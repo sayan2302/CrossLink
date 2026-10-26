@@ -46,7 +46,7 @@ export default function LawtonCorporateDashboard({
             Hello, <span style={{ fontWeight: 800 }}>&quot;{user.username}&quot;</span>
           </h1>
           <p style={{ fontSize: '15px', color: '#475569', maxWidth: '640px', lineHeight: 1.5, margin: 0 }}>
-            Welcome to <span style={{ fontWeight: 600, color: portal.accentColor }}>{portal.brandName}</span>. Upload member census data, download corporate e-cards, and access network providers across Southeast Asia.
+            Welcome to <span style={{ fontWeight: 600, color: '#0f172a' }}>{portal.welcomeBrandingName || 'LawtonAsia'}</span>. We&apos;re here for you and your team&apos;s health and wellness.
           </p>
         </div>
       </div>

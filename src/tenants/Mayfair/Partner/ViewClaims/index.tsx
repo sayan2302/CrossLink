@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PortalViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
+import { FormField, CustomInput } from '@/tenants/Common/ui';
 
 interface ClaimRecord {
   claimRefNo: string;
@@ -102,38 +103,41 @@ export default function MayfairPartnerViewClaims({ portal, onBack }: PortalViewP
       {/* Filter Form */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', alignItems: 'flex-end' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Insured Name</label>
-            <input
+          <FormField label="Insured Name">
+            <CustomInput
               type="text"
               placeholder="e.g. John Doe"
               value={insuredName}
               onChange={(e) => setInsuredName(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setInsuredName('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Policy Number</label>
-            <input
+          <FormField label="Policy Number">
+            <CustomInput
               type="text"
               placeholder="e.g. POL-1002"
               value={polNo}
               onChange={(e) => setPolNo(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setPolNo('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#475569', marginBottom: '6px' }}>Claim Number</label>
-            <input
+          <FormField label="Claim Number">
+            <CustomInput
               type="text"
               placeholder="e.g. CLM102938"
               value={claimNo}
               onChange={(e) => setClaimNo(e.target.value)}
-              style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', boxSizing: 'border-box' }}
+              clearable
+              onClear={() => setClaimNo('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
           <div>
             <button

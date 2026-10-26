@@ -10,6 +10,7 @@ export interface PortalConfig {
   role: 'HR' | 'Broker' | 'Insurer';
   domains: string[];
   brandName: string;
+  welcomeBrandingName?: string;
   portalTitle: string;
   portalSubtitle: string;
   logoUrl: string;
@@ -32,6 +33,7 @@ export const PORTAL_CONFIGS: Record<string, PortalConfig> = {
     role: 'HR',
     domains: ['corporate.mayfair.com', 'uat-corporate.mayfairwecare.in', 'corporate.mayfairwecare.in'],
     brandName: 'Mayfair We Care',
+    welcomeBrandingName: 'Mayfair We care',
     portalTitle: 'Corporate Health Gateway',
     portalSubtitle: 'Employee wellness, coverage, and benefit administration',
     logoUrl: '/images/mayfair-logo.png',
@@ -59,6 +61,7 @@ export const PORTAL_CONFIGS: Record<string, PortalConfig> = {
     role: 'Broker',
     domains: ['partner.mayfair.com', 'uat-partner.mayfairwecare.in', 'partner.mayfairwecare.in'],
     brandName: 'Mayfair We Care',
+    welcomeBrandingName: 'Mayfair We care',
     portalTitle: 'Partner & Broker Portal',
     portalSubtitle: 'Policy portfolio management, client servicing & claim tracking',
     logoUrl: '/images/mayfair-logo.png',
@@ -86,6 +89,7 @@ export const PORTAL_CONFIGS: Record<string, PortalConfig> = {
     role: 'Insurer',
     domains: ['insurer.mayfair.com', 'uat-insurer.mayfairwecare.in', 'insurer.mayfairwecare.in'],
     brandName: 'Mayfair We Care',
+    welcomeBrandingName: 'Mayfair We care',
     portalTitle: 'Insurer Analytics & Underwriting Console',
     portalSubtitle: 'Loss ratios, settlement metrics, and portfolio risk management',
     logoUrl: '/images/mayfair-logo.png',
@@ -113,6 +117,7 @@ export const PORTAL_CONFIGS: Record<string, PortalConfig> = {
     role: 'HR',
     domains: ['corporate.lawtonasia.com', 'corporate.lawton.com', 'uat-corporate.lawtonasia.com', 'hr-stg.lawtonasia.com'],
     brandName: 'Lawton Asia',
+    welcomeBrandingName: 'LawtonAsia',
     portalTitle: 'Lawton Asia Corporate Portal',
     portalSubtitle: 'Thailand & Regional Group Employee Benefit Management',
     logoUrl: '/images/lawton-logo.svg',
@@ -139,6 +144,7 @@ export const PORTAL_CONFIGS: Record<string, PortalConfig> = {
     role: 'Broker',
     domains: ['partner.lawtonasia.com', 'partner.lawton.com', 'uat-partner.lawtonasia.com'],
     brandName: 'Lawton Asia',
+    welcomeBrandingName: 'LawtonAsia',
     portalTitle: 'Lawton Asia Partner Portal',
     portalSubtitle: 'Broker & Agent Operations, Submissions and Client Details',
     logoUrl: '/images/lawton-logo.svg',

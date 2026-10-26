@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PortalViewProps } from '@/tenants/Common/types';
 import { useToast } from '@/context/ToastContext';
+import { FormField, CustomSelect, CustomInput } from '@/tenants/Common/ui';
 
 interface EcardEntity {
   corpId: number;
@@ -249,37 +250,34 @@ export default function MayfairCorporateDownloadEcards({ portal, onBack }: Porta
       <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)' }}>
         <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', alignItems: 'flex-end' }}>
           {entities.length > 1 && (
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
-                Select Corporate / Entity
-              </label>
-              <select
+            <FormField label="Select Corporate / Entity">
+              <CustomSelect
                 value={selectedCorpId}
-                onChange={(e) => setSelectedCorpId(e.target.value ? Number(e.target.value) : '')}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
-              >
-                <option value="">All Entities</option>
-                {entities.map((ent) => (
-                  <option key={ent.corpId} value={ent.corpId}>
-                    {ent.corpName}
-                  </option>
-                ))}
-              </select>
-            </div>
+                onChange={(val) => setSelectedCorpId(val ? Number(val) : '')}
+                options={[
+                  { value: '', label: 'All Entities' },
+                  ...entities.map((ent) => ({
+                    value: String(ent.corpId),
+                    label: ent.corpName,
+                  })),
+                ]}
+                placeholder="All Entities"
+                accentColor={portal.accentColor}
+              />
+            </FormField>
           )}
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
-              Employee Code <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <input
+          <FormField label="Employee Code" required>
+            <CustomInput
               type="text"
               value={empCode}
               onChange={(e) => setEmpCode(e.target.value)}
               placeholder="e.g. EMP12345"
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', backgroundColor: '#ffffff' }}
+              clearable
+              onClear={() => setEmpCode('')}
+              accentColor={portal.accentColor}
             />
-          </div>
+          </FormField>
 
           <div>
             <button

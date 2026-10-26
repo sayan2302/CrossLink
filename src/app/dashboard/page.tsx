@@ -23,19 +23,42 @@ export default async function DashboardPage() {
     redirect('/');
   }
 
-  let user: { username: string; role: string };
+  let user: { username: string; role: string; [key: string]: any };
   try {
     const parsed = JSON.parse(sessionCookie);
     // Verify session matches active portal and contains valid user credentials
     if (!parsed || !parsed.user || (parsed.portalKey && parsed.portalKey !== portal.portalKey)) {
       redirect('/');
     }
-    const rawUsername = parsed.user.username || parsed.user.loginName;
-    if (!rawUsername) {
+    const rawDisplayName =
+      parsed.user.userName ||
+      parsed.user.displayName ||
+      parsed.user.firstName ||
+      parsed.user.name ||
+      parsed.user.username ||
+      parsed.user.loginName ||
+      '';
+    if (!rawDisplayName) {
       redirect('/');
     }
+
+    const formatDisplayName = (val: string) => {
+      if (!val) return portal.brandName;
+      const lower = val.toLowerCase().trim();
+      if (lower === 'lawton_asia' || lower === 'lawtonasia') return 'Lawton Asia';
+      if (lower === 'lawton_corporate' || lower === 'lawton_corp' || lower === 'lawtoncorporate') return 'Lawton Corporate';
+      if (lower === 'mayfair_corporate' || lower === 'mayfair_corp' || lower === 'mayfaircorporate') return 'Mayfair Corporate';
+      if (lower === 'mayfair_partner' || lower === 'mayfairpartner') return 'Mayfair Partner';
+      if (lower === 'mayfair_insurer' || lower === 'mayfairinsurer') return 'Mayfair Insurer';
+      if (val.includes('_')) {
+        return val.split('_').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+      }
+      return val;
+    };
+
     user = {
-      username: rawUsername,
+      username: formatDisplayName(rawDisplayName),
+      rawUsername: parsed.user.username || parsed.user.loginName || rawDisplayName,
       role: parsed.role || portal.role,
     };
   } catch {

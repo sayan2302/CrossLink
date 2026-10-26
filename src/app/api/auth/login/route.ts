@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
         const sessionPayload = {
           token: data?.token || data?.access_token || data?.tokenData?.token || 'authenticated',
           user: data?.user || {
+            userName: data?.userName || data?.username || username,
             username: data?.username || username,
+            loginName: data?.loginName || username,
             role: portal.role,
             userId: data?.userId,
           },
