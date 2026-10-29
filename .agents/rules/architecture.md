@@ -199,3 +199,47 @@ Every Next.js API route acts as a Backend-For-Frontend (BFF) proxy to `dx-adapte
    - `src/components/` is strictly reserved for global application-level layout orchestrators (`DashboardHost.tsx`, `DevPortalSwitcher.tsx`, `layout/TopNavigation.tsx`).
    - NEVER create portal-specific components, loose view files, or subfolders like `components/dashboard/` inside `src/components/`. All portal views live in `src/tenants/`.
    - NEVER introduce dead code, obsolete prototype components, or unused boilerplate (`page.module.css`, template SVGs, scratch scripts).
+
+
+---
+
+## 9. Strict Legacy Code Migration & Deep Traceability Rules
+
+> **CRITICAL ARCHITECTURAL DIRECTIVE (ZERO SHALLOW MIGRATIONS)**:
+> Missing business logic, omission of secondary API enrichments, or timezone date shifts during migration is strictly unacceptable. All agents migrating legacy ASP.NET MVC / Razor components to CrossLink and `dx-adapter` MUST adhere to the following mandatory audit and implementation protocols:
+
+### 1. Full-Pipeline Deep Traceability (End-to-End Call Chaining)
+When migrating ANY legacy feature or search module, agents MUST trace the full execution chain to its lowest layer:
+- **Never stop at the Controller**: Inspecting only the Controller action (e.g. `BrokerHomeController.cs`) is strictly prohibited.
+- **Trace all Service & Provider Classes**: Inspect the underlying providers (e.g. `PolicyProvider.cs`, `ClaimProvider.cs`, `UserManagementProvider.cs`).
+- **Trace all Utility & Client Classes**: Inspect low-level integration clients (e.g. `ElasticAPI.cs`, `RestServiceUtil.cs`, `ClaimApi.cs`).
+- **Audit for Secondary / Chained Enrichment Calls**: Look for secondary API requests that occur after the primary search (e.g., `/FetchMemberPolicyDetails` in Claim API v3, supplementary database queries, or post-processing loops) that overwrite or enrich primary DTO fields (such as `TravelStartDate`, `TravelEndDate`, `PlanType`, `CountryOfCoverage`, `ActualEmpCode`, or `memberPolicyStatus`).
+- **Audit AutoMapper Mappings**: Inspect `Mapper.cs` and DTO mapping profiles to see which properties are mapped, ignored, or computed during serialization.
+
+### 2. Strict Date, Timezone & Serialization Parity
+Legacy .NET systems frequently serialize dates as `/Date(timestamp-offset)/` or un-zoned ISO strings:
+- **Timezone Boundary Auditing**: If an upstream timestamp is serialized in UTC representing local midnight (e.g. `18:30:00 UTC` for India IST +05:30 or Thailand +07:00), using naive `toLocaleDateString()` will shift the date into the next calendar day.
+- **Enrichment Precedence**: If a secondary service (e.g. v3 `/FetchMemberPolicyDetails`) provides explicit date fields (such as `travelStartDate: "2026-07-31T00:00:00"`), those authoritative dates MUST take precedence over un-enriched timestamps.
+- **Zero Date Mismatch Tolerance**: Any one-day date disparity between CrossLink and the legacy UAT portal is a critical defect. Agents must verify both UTC and local interpretations against live UAT output.
+
+### 3. Exact Visual Presentation & Field Label Parity
+- **Zero Hallucinated Copy**: Never invent connecting prepositions (such as adding `"to "` between stacked dates), prefixes, or labels that do not exist in the legacy Razor view.
+- **Razor Template Inspection**: Always inspect the corresponding Razor view (`.cshtml`) to verify exact table column layout, line breaks (`<br>`), badges, and empty/fallback representations (e.g. `"-"` vs `""`).
+- **Visual Match**: CrossLink views must match the live legacy UAT portal column-by-column, row-by-row, and field-by-field.
+
+### 4. Mandatory Pre-Migration Verification Checklist
+Before marking any component migration complete, the agent must verify:
+1. [ ] Primary upstream API endpoint and payload identified.
+2. [ ] All secondary/chained enrichment calls identified and implemented in `dx-adapter`.
+3. [ ] All in-memory filtering, deduplication, and scoping rules replicated.
+4. [ ] Date parsing matches legacy Razor `.ToString("dd-MMM-yyyy")` with zero timezone drift.
+5. [ ] Search results tested with real data sets against live UAT to prove identical results.
+
+---
+
+## 10. Single Canonical Agent Rules Directory (`.agents/` Only)
+
+> **STRICT BAN ON OUTSIDE AGENT FILES OR DIRECTORIES**:
+> - All agent rules, ground truths, workflows, and guidelines must strictly and exclusively reside inside `/.agents/rules/`.
+> - Agents must **NEVER** create or duplicate agent rule files, guidelines, or folders anywhere else in the workspace (e.g., do NOT create `/agents`, `/agent`, `/AGENTS.md`, `/CLAUDE.md`, `/GEMINI.md`, or ad-hoc rule files in root or any subdirectories).
+> - Any agent instructions or documentation must be consolidated into `/.agents/rules/` only.

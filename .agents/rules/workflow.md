@@ -13,4 +13,9 @@
   in the response so the user can verify compliance.
 
 ## 3. System Architecture & Ground Truth
-- Always consult `AGENTS.md` and `.agents/rules/architecture.md` for exact repository locations (`C:\ALL\OFFICE\crosslink`, `C:\ALL\OFFICE\dx-adapter`, `C:\ALL\OFFICE\mayfairmemberportal`), legacy branch mappings (`main` for Mayfair, `lawtonAsiaUAT` for Lawton Asia), DX-Adapter API specs, and MongoDB topology.
+- Always consult `.agents/rules/architecture.md` for exact repository locations (`C:\ALL\OFFICE\crosslink`, `C:\ALL\OFFICE\dx-adapter`, `C:\ALL\OFFICE\mayfairmemberportal`), legacy branch mappings (`main` for Mayfair, `lawtonAsiaUAT` for Lawton Asia), DX-Adapter API specs, and MongoDB topology.
+
+## 4. Single Canonical Agent Rules Directory (`.agents/` Only)
+- **Strictly Prohibited**: Creating, duplicating, or saving agent rule files, guidelines, prompt instructions, or directories anywhere outside `/.agents/` (e.g., do **NOT** create `/agents`, `/agent`, `/AGENTS.md`, `/CLAUDE.md`, `/GEMINI.md`, or ad-hoc rule files in root or any subfolder).
+- All agent rules, workflows, architectural ground truths, and specifications must strictly and exclusively reside inside `/.agents/rules/`.
+- If an agent discovers agent rules outside `/.agents/`, it must alert the user or consolidate them into `/.agents/rules/` rather than creating additional copies.
